@@ -1,5 +1,7 @@
 USE community_rentals;
 
+-- create initial data for database testing
+
 -- address
 INSERT INTO address VALUES
 	(800, "Boylston St", "Boston", "MA", 02199),
