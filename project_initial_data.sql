@@ -4,8 +4,8 @@ USE community_rentals;
 
 -- address
 INSERT INTO address VALUES
-	(800, "Boylston St", "Boston", "MA", 02199),
-    (100, "Huntington Ave", "Boston", "MA", 02116);
+	(800, "Boylston St", "Boston", "MA", "02199"),
+    (100, "Huntington Ave", "Boston", "MA", "02116");
     
     
 -- payment type
@@ -26,9 +26,9 @@ INSERT INTO user (username, password, first_name, last_name, phone, average_rati
 	is_customer, is_seller, street_number, street_name, city, state, zipcode) 
 	VALUES
 	("cb123", "c123", "chanon", "bovornvirakit", "987654321", "5", TRUE, TRUE, 
-    800, "Boylston St", "Boston", "MA", 02199),
+    800, "Boylston St", "Boston", "MA", "02199"),
     ("mq123", "m123", "macee", "qi", "123456789", "5", TRUE, FALSE, 
-    100, "Huntington Ave", "Boston", "MA", 02116);
+    100, "Huntington Ave", "Boston", "MA", "02116");
     
     
 -- user payment
