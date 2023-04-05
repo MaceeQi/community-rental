@@ -1,0 +1,2 @@
+USE community_rentals;
+
