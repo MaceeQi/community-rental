@@ -254,7 +254,6 @@ CREATE TRIGGER payment_type_before_insert_payment_preference
 		END IF;
     END $$
 DELIMITER ;
-DELETE FROM payment_type WHERE type = "mastercard";
 
 -- insert new payment preference for seller
 DROP PROCEDURE IF EXISTS user_adds_payment_preference;
@@ -284,31 +283,158 @@ DELIMITER ;
 
 
 -- create new listing
--- error if user isn't seller 
--- insert new listing to listing table
--- trigger (before insert on listing): insert new item to item table if doesn't exist
+-- trigger (before insert into item): add to item_category if doesn't exist
+DROP TRIGGER IF EXISTS item_category_before_item;
+DELIMITER $$
+CREATE TRIGGER item_category_before_item
+	-- update item_category table before insert to item
+	BEFORE INSERT ON item
+    FOR EACH ROW
+    BEGIN
+		-- add new category if not yet exists
+        IF NOT EXISTS (SELECT * FROM item_category WHERE category = NEW.category) 
+			THEN
+            INSERT INTO item_category VALUES
+				(NEW.category);
+		END IF;
+    END $$
+DELIMITER ;
 
+-- insert new item to item table and create new listing in listing table
+DROP PROCEDURE IF EXISTS create_listing;
+DELIMITER $$
+CREATE PROCEDURE create_listing( IN username_p VARCHAR(64),
+	IN item_description_p TEXT(1000), IN category_p VARCHAR(50),  
+    IN price_p DECIMAL(13,2), IN quantity_p INT )
+    BEGIN
+		-- local variable to hold PK of new item
+        DECLARE new_item INT;
+        
+		-- ensure user is seller before creating new listing
+        IF EXISTS (SELECT * FROM user WHERE username = username_p 
+			AND is_seller = TRUE) THEN
+            
+			-- create new item
+			INSERT INTO item (description, average_rating, category)
+				VALUES (item_description_p, "5", category_p);
+                
+			-- store new item's PK into new_item variable
+            SELECT LAST_INSERT_ID() INTO new_item;
+			
+            -- create new listing with new item
+            INSERT INTO listing VALUES
+				(new_item, username_p, price_p, quantity_p);
+            
+			SELECT("Listing created");
+		ELSE
+			SELECT("User is not a seller");
+		END IF;
+    END $$
+DELIMITER ;
 
 
 
 -- update listing
 -- update price from listing table
 -- update quantity from listing table
-
-
-
-
--- update item
--- update item description from item table
-
+-- update item description for item associated to listing
+DROP PROCEDURE IF EXISTS update_listing;
+DELIMITER $$
+CREATE PROCEDURE update_listing( IN item_p INT, IN username_p VARCHAR(64),
+	IN new_price_p DECIMAL(13,2), IN new_quantity_p INT, 
+    IN new_item_description_p TEXT(1000) )
+	BEGIN
+		IF EXISTS (SELECT * FROM listing WHERE item = item_p
+			AND seller = username_p) THEN
+            
+            -- update price and quantity in listing to new values
+            UPDATE listing SET price = new_price_p, 
+				quantity = new_quantity_p WHERE
+                item = item_p AND seller = username_p;
+            
+            -- update item description for item associated to listing
+			UPDATE item SET description = new_item_description_p
+				WHERE id = item_p;
+				
+		END IF;
+    END $$
+DELIMITER ;
 
 
 
 -- delete listing
--- delete listing from listing table
-
+-- delete listing from listing table and delete item from item table
+DROP PROCEDURE IF EXISTS delete_listing;
+DELIMITER $$
+CREATE PROCEDURE delete_listing( IN item_p INT, IN username_p VARCHAR(64) )
+	BEGIN
+		-- delete listing
+		DELETE FROM listing WHERE
+			item = item_p AND seller = username_p;
+            
+		-- delete item
+        DELETE FROM item WHERE
+			id = item_p;
+    END $$
+DELIMITER ;
 
 
 
 -- retrieve listings
 -- get all listings for user
+DROP PROCEDURE IF EXISTS get_user_listings;
+DELIMITER $$
+CREATE PROCEDURE get_user_listings( IN username_p VARCHAR(64) )
+	BEGIN
+		SELECT item, description, price, quantity, average_rating, 
+			rating_count, total_rating, category FROM listing
+			JOIN item ON listing.item = item.id
+			WHERE seller = username_p;
+    END $$
+DELIMITER ;
+
+
+
+-- retrieve number of listings
+DROP FUNCTION IF EXISTS get_num_user_listings;
+DELIMITER $$
+CREATE FUNCTION get_num_user_listings( username_p VARCHAR(64) )
+	RETURNS INT DETERMINISTIC READS SQL DATA
+	BEGIN
+		-- variable to hold number of listings user has
+        DECLARE number_listings INT DEFAULT 0;
+        
+        -- assign value to variable
+		SELECT COUNT(*) INTO number_listings 
+			FROM listing
+			WHERE seller = username_p;
+            
+		RETURN number_listings;
+    END $$
+DELIMITER ;
+
+
+
+-- get user's payment preferences
+DROP PROCEDURE IF EXISTS get_user_payment_preference;
+DELIMITER $$
+CREATE PROCEDURE get_user_payment_preference( IN username_p VARCHAR(64) )
+	BEGIN
+		SELECT * FROM payment_preference
+			WHERE seller = username_p;
+    END $$
+DELIMITER ;
+
+
+
+-- get user's payment info
+DROP PROCEDURE IF EXISTS get_user_payment_info;
+DELIMITER $$
+CREATE PROCEDURE get_user_payment_info( IN username_p VARCHAR(64) )
+	BEGIN
+		SELECT cc_number, expiration_date, type FROM user_payment
+			JOIN payment_info 
+            ON user_payment.payment_info = payment_info.cc_number
+			WHERE user = username_p;
+    END $$
+DELIMITER ;
