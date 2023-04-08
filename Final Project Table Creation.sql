@@ -6,7 +6,7 @@ USE community_rentals;
 
 CREATE TABLE address (
 	number			INT				NOT NULL,
-    street			VARCHAR(64)		NOT NULL,
+    street			VARCHAR(50)		NOT NULL,
 	city			VARCHAR(50)		NOT NULL,
     state			CHAR(2)			NOT NULL,
     zipcode			CHAR(5)			NOT NULL,
