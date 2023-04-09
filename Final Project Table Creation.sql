@@ -91,11 +91,17 @@ CREATE TABLE item_category (
 
 CREATE TABLE item (
 	id					INT				PRIMARY KEY AUTO_INCREMENT,
+    owner				VARCHAR(64)		NOT NULL,
     description			TEXT(1000)		NOT NULL,
     average_rating		DECIMAL(2, 1)	NOT NULL,
     rating_count		INT				NOT NULL DEFAULT 0,
     total_rating		INT				NOT NULL DEFAULT 0,
     category			VARCHAR(50)		NOT NULL,
+    CONSTRAINT owner_fk
+		FOREIGN KEY (owner)
+        REFERENCES user (username)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
 	CONSTRAINT category_fk
 		FOREIGN KEY (category)
         REFERENCES item_category (category)
@@ -120,19 +126,14 @@ CREATE TABLE wishlist (
 
 CREATE TABLE listing (
 	item		INT				NOT NULL,
-    seller		VARCHAR(64)		NOT NULL,
     price		DECIMAL(13,2)	NOT NULL,
     quantity	INT				NOT NULL,
+    CONSTRAINT listing_pk PRIMARY KEY (item),
     CONSTRAINT item_listing_fk
 		FOREIGN KEY (item)
         REFERENCES item (id)
         ON UPDATE CASCADE
-        ON DELETE CASCADE,
-	CONSTRAINT seller_listing_fk
-		FOREIGN KEY (seller)
-		REFERENCES user (username)
-        ON UPDATE CASCADE
-        ON DELETE RESTRICT
+        ON DELETE CASCADE
 );
 
 CREATE TABLE rental (

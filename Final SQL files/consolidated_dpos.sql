@@ -125,18 +125,6 @@ CREATE PROCEDURE login( IN username_p VARCHAR(64), IN password_p VARCHAR(128) )
 DELIMITER ;
 
 
--- retrieve user info
--- get all attributes of user
-DROP PROCEDURE IF EXISTS get_user_info;
-DELIMITER $$
-CREATE PROCEDURE get_user_info( IN username_p VARCHAR(64) )
-	BEGIN
-		SELECT * FROM user
-            WHERE user.username = username_p;
-    END $$
-DELIMITER ;
-
-
 -- Search for user by username/firstname/lastname
 DROP PROCEDURE IF EXISTS search_user;
 DELIMITER $$
@@ -275,16 +263,6 @@ CREATE PROCEDURE get_user_listings( IN username_p VARCHAR(64) )
 DELIMITER ;
 
 
--- Search for all listings by seller
-DROP PROCEDURE IF EXISTS seller_listings;
-DELIMITER $$
-CREATE PROCEDURE seller_listings(seller_p VARCHAR(64))
-BEGIN
-	SELECT * FROM item JOIN listing ON item.id = listing.item WHERE seller = seller_p;
-END$$
-DELIMITER ;
-
-
 -- Search for all rentals
 DROP PROCEDURE IF EXISTS all_rentals;
 DELIMITER $$
@@ -407,24 +385,6 @@ END$$
 DELIMITER ;
 
 
--- retrieve number of listings
-DROP FUNCTION IF EXISTS get_num_user_listings;
-DELIMITER $$
-CREATE FUNCTION get_num_user_listings( username_p VARCHAR(64) )
-	RETURNS INT DETERMINISTIC READS SQL DATA
-	BEGIN
-		-- variable to hold number of listings user has
-        DECLARE number_listings INT DEFAULT 0;
-        
-        -- assign value to variable
-		SELECT COUNT(*) INTO number_listings 
-			FROM listing
-			WHERE seller = username_p;
-            
-		RETURN number_listings;
-    END $$
-DELIMITER ;
-
 
 
 
@@ -498,36 +458,6 @@ CREATE PROCEDURE user_adds_payment_info( IN username_p VARCHAR(64),
 DELIMITER ;
 
 
--- Add payment info
-DROP PROCEDURE IF EXISTS add_payment_info;
-DELIMITER $$
-CREATE PROCEDURE add_payment_info(cc_number_p VARCHAR(16), expiration_date_p DATE, type_p ENUM('VISA', 'AMERICAN EXPRESS', 'MASTERCARD'))
-BEGIN
-	IF (payment_info_exists(cc_number_p)) THEN
-		SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = 'Payment info already exists';
-	ELSE
-		INSERT INTO payment_info VALUES (cc_number_p, expiration_date_p, type_p);
-    END IF;
-END$$
-DELIMITER ;
-
-
--- Add user_payment
-DROP PROCEDURE IF EXISTS add_user_payment;
-DELIMITER $$
-CREATE PROCEDURE add_user_payment(username_p VARCHAR(64), payment_p VARCHAR(16))
-BEGIN
-	IF (user_payment_exists(username_p, payment_p)) THEN
-		SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = 'Payment already associated with user';
-	ELSEIF NOT (payment_info_exists(payment_p)) THEN
-		SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = 'Payment info does not exist';
-	ELSE
-		INSERT INTO user_payment VALUES (username_p, payment_p);
-    END IF;
-END$$
-DELIMITER ;
-
-
 -- add payment preference
 -- insert new payment preference for seller
 DROP PROCEDURE IF EXISTS user_adds_payment_preference;
@@ -552,34 +482,6 @@ CREATE PROCEDURE user_adds_payment_preference( IN username_p VARCHAR(64),
 			SELECT("User is not a seller");
 		END IF;
     END $$
-DELIMITER ;
-
-
--- Delete payment info
-DROP PROCEDURE IF EXISTS del_payment_info;
-DELIMITER $$
-CREATE PROCEDURE del_payment_info(cc_number_p VARCHAR(16))
-BEGIN
-	IF NOT (payment_info_exists(cc_number_p)) THEN
-		SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = 'Payment info does not exists';
-	ELSE
-		DELETE FROM payment_info WHERE cc_number = cc_number_p;
-    END IF;
-END$$
-DELIMITER ;
-
-
--- Delete user_payment
-DROP PROCEDURE IF EXISTS del_user_payment;
-DELIMITER $$
-CREATE PROCEDURE del_user_payment(username_p VARCHAR(64), payment_p VARCHAR(16))
-BEGIN
-	IF NOT (user_payment_exists(username_p, payment_p)) THEN
-		SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = 'Payment not associated with user';
-	ELSE
-		DELETE FROM user_payment WHERE user = username_p AND payment_info = payment_p;
-    END IF;
-END$$
 DELIMITER ;
 
 
@@ -644,10 +546,6 @@ CREATE PROCEDURE delete_listing( IN item_p INT, IN username_p VARCHAR(64) )
 		-- delete listing
 		DELETE FROM listing WHERE
 			item = item_p AND seller = username_p;
-            
-		-- delete item
-        DELETE FROM item WHERE
-			id = item_p;
     END $$
 DELIMITER ;
 
@@ -716,19 +614,6 @@ DELIMITER ;
 -- UPDATEs:
 
 -- update user info
--- update name
-DROP PROCEDURE IF EXISTS update_user_name;
-DELIMITER $$
-CREATE PROCEDURE update_user_name( IN username_p VARCHAR(64), 
-	IN first_name_p VARCHAR(50), IN last_name_p VARCHAR(50) )
-	BEGIN
-		UPDATE user SET
-			first_name = first_name_p, last_name = last_name_p
-            WHERE username = username_p;
-    END $$
-DELIMITER ;
-
-
 -- Change user's first name
 DROP PROCEDURE IF EXISTS update_user_first_name;
 DELIMITER $$
@@ -757,19 +642,6 @@ CREATE PROCEDURE update_user_phone( IN username_p VARCHAR(64),
     BEGIN
 		UPDATE user SET 
 			phone = phone_p
-            WHERE username = username_p;
-    END $$
-DELIMITER ;
-
-
--- update user type
-DROP PROCEDURE IF EXISTS update_user_type;
-DELIMITER $$
-CREATE PROCEDURE update_user_type( IN username_p VARCHAR(64), 
-	IN is_seller_p BOOL )
-    BEGIN
-		UPDATE user SET 
-			is_seller = is_seller_p
             WHERE username = username_p;
     END $$
 DELIMITER ;
