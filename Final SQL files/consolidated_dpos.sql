@@ -243,7 +243,7 @@ DROP PROCEDURE IF EXISTS search_items_by_seller;
 DELIMITER $$
 CREATE PROCEDURE search_items_by_seller(seller_p VARCHAR(64))
 BEGIN
-	SELECT * FROM item WHERE username = seller_p;
+	SELECT * FROM item WHERE owner = seller_p;
 END$$
 DELIMITER ;
 
