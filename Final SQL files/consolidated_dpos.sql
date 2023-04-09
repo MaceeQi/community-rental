@@ -230,11 +230,20 @@ DELIMITER ;
 
 
 -- Search for all items in a category
-DROP PROCEDURE IF EXISTS search_items;
+DROP PROCEDURE IF EXISTS search_items_by_category;
 DELIMITER $$
 CREATE PROCEDURE search_items(category_p VARCHAR(50))
 BEGIN
 	SELECT * FROM item WHERE category = category_p;
+END$$
+DELIMITER ;
+
+-- Search for all items owned by seller
+DROP PROCEDURE IF EXISTS search_items_by_seller;
+DELIMITER $$
+CREATE PROCEDURE search_items_by_seller(seller_p VARCHAR(64))
+BEGIN
+	SELECT * FROM item WHERE username = seller_p;
 END$$
 DELIMITER ;
 
@@ -384,6 +393,17 @@ BEGIN
 END$$
 DELIMITER ;
 
+-- Returns the owner of the specified item
+DROP FUNCTION IF EXISTS get_item_owner;
+DELIMITER $$
+CREATE FUNCTION get_item_owner(item_p INT)
+RETURNS VARCHAR(64) DETERMINISTIC READS SQL DATA
+BEGIN
+	DECLARE item_owner VARCHAR(64) DEFAULT NULL;
+    SELECT owner INTO item_owner FROM item WHERE id = item_p;
+    RETURN (item_owner);
+END$$
+DELIMITER ;
 
 
 
@@ -504,48 +524,100 @@ DELIMITER ;
 
 
 -- create new listing
--- insert new item to item table and create new listing in listing table
+-- use item that already exists in item table
 DROP PROCEDURE IF EXISTS create_listing;
 DELIMITER $$
-CREATE PROCEDURE create_listing( IN username_p VARCHAR(64),
+CREATE PROCEDURE create_listing(username_p VARCHAR(64), item_p INT, price_p DECIMAL(13,2), quantity_p INT)
+BEGIN
+	-- ensure user deleting the item actually owns the item
+	IF EXISTS (SELECT(get_item_owner(item_p))) THEN
+		IF NOT (username_p = get_item_owner(item_p)) THEN
+			SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = "User does not own this item";
+		END IF;
+	ELSE
+		SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = "Item does not exist";
+	END IF;
+    
+	-- set user to seller before creating new listing
+	IF EXISTS (SELECT * FROM user WHERE username = username_p AND is_seller = FALSE) THEN
+		UPDATE user SET is_seller = TRUE WHERE username = username_p;
+	END IF;
+    
+    INSERT INTO listing VALUES (item_p, price_p, quantity_p);
+        
+	SELECT("Listing created");
+END$$
+DELIMITER ;
+
+-- create new listing
+-- insert new item to item table and create new listing in listing table
+DROP PROCEDURE IF EXISTS create_new_item_listing;
+DELIMITER $$
+CREATE PROCEDURE create_new_item_listing( IN username_p VARCHAR(64),
 	IN item_description_p TEXT(1000), IN category_p VARCHAR(50),  
     IN price_p DECIMAL(13,2), IN quantity_p INT )
     BEGIN
 		-- local variable to hold PK of new item
         DECLARE new_item INT;
         
-		-- ensure user is seller before creating new listing
-        IF EXISTS (SELECT * FROM user WHERE username = username_p 
-			AND is_seller = TRUE) THEN
-            
-			-- create new item
-			INSERT INTO item (description, average_rating, category)
-				VALUES (item_description_p, "5", category_p);
-                
-			-- store new item's PK into new_item variable
-            SELECT LAST_INSERT_ID() INTO new_item;
-			
-            -- create new listing with new item
-            INSERT INTO listing VALUES
-				(new_item, username_p, price_p, quantity_p);
-            
-			SELECT("Listing created");
-		ELSE
-			SELECT("User is not a seller");
+		-- set user to seller before creating new listing
+        IF EXISTS (SELECT * FROM user WHERE username = username_p AND is_seller = FALSE) THEN
+			UPDATE user SET is_seller = TRUE WHERE username = username_p;
 		END IF;
+            
+		-- create new item
+		INSERT INTO item (description, average_rating, category)
+			VALUES (item_description_p, "5", category_p);
+			
+		-- store new item's PK into new_item variable
+		SELECT LAST_INSERT_ID() INTO new_item;
+		
+		-- create new listing with new item
+		INSERT INTO listing VALUES
+			(new_item, price_p, quantity_p);
+		
+		SELECT("Listing created");
     END $$
 DELIMITER ;
 
 
 -- delete listing
--- delete listing from listing table and delete item from item table
+-- delete listing from listing table
 DROP PROCEDURE IF EXISTS delete_listing;
 DELIMITER $$
 CREATE PROCEDURE delete_listing( IN item_p INT, IN username_p VARCHAR(64) )
 	BEGIN
+		-- ensure user deleting the listing actually owns the item
+		IF EXISTS (SELECT(get_item_owner(item_p))) THEN
+			IF NOT (username_p = get_item_owner(item_p)) THEN
+				SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = "User does not own this item";
+			END IF;
+		ELSE
+			SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = "Item does not exist";
+		END IF;
+        
 		-- delete listing
-		DELETE FROM listing WHERE
-			item = item_p AND seller = username_p;
+		DELETE FROM listing WHERE item = item_p;
+    END $$
+DELIMITER ;
+
+
+-- delete item from item table
+DROP PROCEDURE IF EXISTS delete_item;
+DELIMITER $$
+CREATE PROCEDURE delete_item( IN item_p INT, IN username_p VARCHAR(64) )
+	BEGIN
+		-- ensure user deleting the item actually owns the item
+		IF EXISTS (SELECT(get_item_owner(item_p))) THEN
+			IF NOT (username_p = get_item_owner(item_p)) THEN
+				SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = "User does not own this item";
+			END IF;
+		ELSE
+			SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = "Item does not exist";
+		END IF;
+        
+		-- delete item
+		DELETE FROM item WHERE id = item_p;
     END $$
 DELIMITER ;
 
@@ -699,8 +771,15 @@ CREATE PROCEDURE update_listing( IN item_p INT, IN username_p VARCHAR(64),
 	IN new_price_p DECIMAL(13,2), IN new_quantity_p INT, 
     IN new_item_description_p TEXT(1000) )
 	BEGIN
-		IF EXISTS (SELECT * FROM listing WHERE item = item_p
-			AND seller = username_p) THEN
+		IF EXISTS (SELECT * FROM listing WHERE item = item_p) THEN
+			-- ensure user deleting the item actually owns the item
+			IF EXISTS (SELECT(get_item_owner(item_p))) THEN
+				IF NOT (username_p = get_item_owner(item_p)) THEN
+					SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = "User does not own the listed item";
+				END IF;
+			ELSE
+				SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = "Item does not exist";
+			END IF;
             
             -- update price and quantity in listing to new values
             UPDATE listing SET price = new_price_p, 
