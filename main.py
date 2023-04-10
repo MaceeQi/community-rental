@@ -1,4 +1,5 @@
 import pymysql
+import bcrypt
 
 # Prompt user for MySQL username and password
 def prompt_user():
@@ -30,6 +31,55 @@ def connect_to_database(database):
         print('\nPlease enter a valid MySQL username and password to access the database.')
 
 
+def hash_password(password):
+    # add salt to password
+    salt = bcrypt.gensalt()
+
+    # hash the password
+    hashed_password = bcrypt.hashpw(password, salt)
+
+    return hashed_password
+
+
+def login(connection):
+    print("Login")
+    return True
+
+def signup(connection):
+    print("Signup")
+    return True
+
+def prompt_login_signup(connection):
+    successful_login = False
+
+    # continue prompting user to login or signup
+    while (not successful_login):
+        print("\nWould you like to:\n1. Login\n2. Sign Up")
+        choice = input("Please select an option: ")
+
+        # convert choice to all lowercase
+        choice = choice.lower()
+
+        # allow user to choose by number or by word
+        if (choice == "1" or choice == "login"):
+            successful_login = login(connection)
+        elif (choice == "2" or choice == "sign up"):
+            successful_login = signup(connection)
+        else:
+            print("Invalid option. Please enter '1' or 'Login' to login, '2' or 'Sign Up' to sign up.")
+
+
+    return
+
+def start_community_rentals_app(connection):
+    # welcome message
+    print("\nWelcome to the Community Rentals App!")
+
+    # prompt user to login or signup
+    prompt_login_signup(connection)
+
+
+
 if __name__ == '__main__':
     database = "community_rentals"
     connection = None
@@ -39,8 +89,9 @@ if __name__ == '__main__':
     while (connection == None):
         connection = connect_to_database(database)
 
+    # begin Community Rentals App
     print("\nDirecting you to the Community Rentals Application...")
-
+    start_community_rentals_app(connection)
 
     # close connection
     connection.close()
