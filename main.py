@@ -30,8 +30,11 @@ def connect_to_database(database):
         print('\nError: %d: %s' % (e.args[0], e.args[1]))
         print('\nPlease enter a valid MySQL username and password to access the database.')
 
-
+# hash password with salt
 def hash_password(password):
+    # convert password string to byte
+    password = bytes(password, 'utf-8')
+
     # add salt to password
     salt = bcrypt.gensalt()
 
@@ -40,21 +43,121 @@ def hash_password(password):
 
     return hashed_password
 
+def check_password():
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw('secret', salt)
+    hashed.find(salt)
 
+# login function
 def login(connection):
     print("Login")
+    username = input("Username: ")
+    password = input("Password: ")
+
     return True
 
+# Validate user input for signing up
+def validate_signup_user_input(phone, street_num, state, zipcode):
+    input_error = False
+    if (not phone.isnumeric() or len(phone) > 11):
+        print("* Phone number: Must be all numbers and cannot be longer than 11 digits")
+        input_error = True
+
+    if (not street_num.isnumeric()):
+        print("* Street number: Must be all numbers")
+        input_error = True
+
+    if (len(state) > 2):
+        print("* State: Please input the two letter abbreviation for state")
+        input_error = True
+
+    if (not zipcode.isnumeric() or len(zipcode) > 5):
+        print("* Zipcode: Valid zipcodes are all numbers and are 5 digits long")
+        input_error = True
+
+    return input_error
+
+# Prompt to ask user whether they would like to continue or not
+def prompt_try_again():
+    exit = False
+    next_steps = ""
+
+    while (not exit):
+        next_steps = input("\nWould you liked to try again (y/n)? ").lower()
+
+        if (next_steps == "n" or next_steps == "y"):
+            exit = True
+        else:
+            print("Please enter a valid input: 'y' or 'n'")
+
+    return next_steps
+
+
+# sign up function
 def signup(connection):
-    print("Signup")
-    return True
+    print("Sign Up")
 
+    # prompt user for info needed for creating a new user
+    exit = False
+    while (not exit):
+        username = input("\nUsername: ")
+        password = input("Password: ")
+        first_name = input("First name: ")
+        last_name = input("Last name: ")
+        phone = input("Phone number: ")
+        street_num = input("Street number: ")
+        street_name = input("Street name: ")
+        city = input("City: ")
+        state = input("State (2 letter abbrev): ")
+        zipcode = input("Zipcode: ")
+        print()
+
+        # validate user input
+        input_error = validate_signup_user_input(phone, street_num, state, zipcode)
+
+        # Errors in input
+        if (input_error):
+            if (prompt_try_again() == "n"):
+                # user doesn't want to continue - navigate back to sign up/login page
+                exit = True
+            else:
+                # user wants to try signing up again
+                continue
+
+        else:
+            # Create new user in user table if no errors in input
+            try:
+                # instantiate cursor for connection
+                cursor = connection.cursor()
+
+                # hash and salt password before storing
+                password = hash_password(password)
+
+                # insert new user to user table (call signup procedure)
+                cursor.callproc("signup", [username, password, first_name, last_name, phone, True, False, street_num,
+                                           street_name, city, state, zipcode, ])
+
+                # commit the changes
+                connection.commit()
+                exit = True
+                print("You have successfully signed up! You may now login with the credentials you signed up with.")
+
+            except pymysql.Error as e:
+                if (e.args[0] == 1062):
+                    # duplicate username
+                    print('Username has already been taken. Please use a different username.')
+                else:
+                    # catch any other errors produced by mysql
+                    print('Error: %d: %s' % (e.args[0], e.args[1]))
+        return
+
+# Prompt user to sign up or login
 def prompt_login_signup(connection):
     successful_login = False
 
     # continue prompting user to login or signup
     while (not successful_login):
-        print("\nWould you like to:\n1. Login\n2. Sign Up")
+        print("\nWould you like to:\n1. Login\n2. Sign Up\n3. Quit")
         choice = input("Please select an option: ")
 
         # convert choice to all lowercase
@@ -62,11 +165,21 @@ def prompt_login_signup(connection):
 
         # allow user to choose by number or by word
         if (choice == "1" or choice == "login"):
+            # navigate to login page
             successful_login = login(connection)
+
         elif (choice == "2" or choice == "sign up"):
-            successful_login = signup(connection)
+            # navigate to sign up page
+            signup(connection)
+
+        elif (choice == "3" or choice == "quit"):
+            # quit program
+            print("\nGoodbye!")
+            quit()
+
         else:
-            print("Invalid option. Please enter '1' or 'Login' to login, '2' or 'Sign Up' to sign up.")
+            print("Invalid option. Please enter '1' or 'Login' to login, '2' or 'Sign Up' to sign up, "
+                  "'3' or 'Quit' to exit.")
 
 
     return

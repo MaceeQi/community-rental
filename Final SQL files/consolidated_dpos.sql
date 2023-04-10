@@ -406,6 +406,22 @@ END$$
 DELIMITER ;
 
 
+-- Returns matching username's password
+DROP FUNCTION IF EXISTS get_user_password;
+DELIMITER $$
+CREATE FUNCTION get_user_password( username_p VARCHAR(64) )
+	RETURNS VARCHAR(128)
+    DETERMINISTIC
+    READS SQL DATA
+    BEGIN
+		DECLARE user_password VARCHAR(128) DEFAULT NULL;
+        SELECT password INTO user_password
+			FROM user
+            WHERE username = username_p;
+		RETURN (user_password);
+	END $$
+DELIMITER ;
+
 
 
 -- *******************************************************************************************
