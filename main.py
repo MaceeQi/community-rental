@@ -43,16 +43,86 @@ def hash_password(password):
 
     return hashed_password
 
-def check_password():
-    salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw('secret', salt)
-    hashed.find(salt)
+def check_password(input_password, stored_password):
+    # check whether hashed passwords match
+    if (bcrypt.checkpw(input_password, stored_password)):
+        return True
+    else:
+        return False
+
+
+# Prompt to ask user whether they would like to continue or not
+def prompt_try_again():
+    exit = False
+    next_steps = ""
+
+    while (not exit):
+        next_steps = input("\nWould you liked to try again (y/n)? ").lower()
+
+        if (next_steps == "n" or next_steps == "y"):
+            exit = True
+        else:
+            print("Please enter a valid input: 'y' or 'n'")
+
+    return next_steps
 
 # login function
 def login(connection):
-    print("Login")
-    username = input("Username: ")
-    password = input("Password: ")
+    print("\nLogin")
+
+    # prompt user to enter login credentials
+    exit = False
+    while (not exit):
+        username = input("\nUsername: ")
+        password = input("Password: ")
+
+        try:
+            # instantiate cursor for connection
+            cursor = connection.cursor()
+
+            # check if username exists
+            cursor.callproc("search_user", [username, ])
+            if (len(cursor.fetchall()) != 1):
+                # username doesn't exist
+                print("Entered username does not exist.")
+
+                if (prompt_try_again() == "n"):
+                    # user doesn't want to continue - navigate back to sign up/login page
+                    return False
+                else:
+                    # user wants to try logging in again
+                    continue
+            else:
+                # username exists, continue by checking to make sure password matches
+                # encode inputted password
+                input_password = password.encode('utf8')
+
+                # create prepared statement to retrieve stored password for username
+                query = "SELECT(get_user_password(%s)) AS password;"
+                cursor.execute(query, username)
+                stored_password = cursor.fetchone()
+                stored_password = stored_password["password"].encode('utf8')
+
+                # check whether passwords match
+                if (check_password(input_password, stored_password)):
+                    # password matches what's stored in database
+                    exit = True
+                    print("\nYou have successfully logged in! Directing you to the home page...")
+
+                else:
+                    # password doesn't match what's stored in database
+                    print("Incorrect password for given username.")
+                    if (prompt_try_again() == "n"):
+                        # user doesn't want to continue - navigate back to sign up/login page
+                        return False
+                    else:
+                        # user wants to try logging in again
+                        continue
+
+        except pymysql.Error as e:
+            # catch any other errors produced by mysql
+            print('Error: %d: %s' % (e.args[0], e.args[1]))
+            continue
 
     return True
 
@@ -77,25 +147,10 @@ def validate_signup_user_input(phone, street_num, state, zipcode):
 
     return input_error
 
-# Prompt to ask user whether they would like to continue or not
-def prompt_try_again():
-    exit = False
-    next_steps = ""
-
-    while (not exit):
-        next_steps = input("\nWould you liked to try again (y/n)? ").lower()
-
-        if (next_steps == "n" or next_steps == "y"):
-            exit = True
-        else:
-            print("Please enter a valid input: 'y' or 'n'")
-
-    return next_steps
-
 
 # sign up function
 def signup(connection):
-    print("Sign Up")
+    print("\nSign Up")
 
     # prompt user for info needed for creating a new user
     exit = False
@@ -149,6 +204,7 @@ def signup(connection):
                 else:
                     # catch any other errors produced by mysql
                     print('Error: %d: %s' % (e.args[0], e.args[1]))
+                continue
         return
 
 # Prompt user to sign up or login
@@ -168,6 +224,10 @@ def prompt_login_signup(connection):
             # navigate to login page
             successful_login = login(connection)
 
+            # TODO: CONTINUE HERE
+            if (successful_login):
+                print("COMMUNITY RENTAL MAIN PAGE")
+
         elif (choice == "2" or choice == "sign up"):
             # navigate to sign up page
             signup(connection)
@@ -180,8 +240,6 @@ def prompt_login_signup(connection):
         else:
             print("Invalid option. Please enter '1' or 'Login' to login, '2' or 'Sign Up' to sign up, "
                   "'3' or 'Quit' to exit.")
-
-
     return
 
 def start_community_rentals_app(connection):
