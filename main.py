@@ -88,7 +88,7 @@ def login(connection):
 
                 if (prompt_try_again() == "n"):
                     # user doesn't want to continue - navigate back to sign up/login page
-                    return False
+                    return False, None
                 else:
                     # user wants to try logging in again
                     continue
@@ -114,7 +114,7 @@ def login(connection):
                     print("Incorrect password for given username.")
                     if (prompt_try_again() == "n"):
                         # user doesn't want to continue - navigate back to sign up/login page
-                        return False
+                        return False, None
                     else:
                         # user wants to try logging in again
                         continue
@@ -124,7 +124,7 @@ def login(connection):
             print('Error: %d: %s' % (e.args[0], e.args[1]))
             continue
 
-    return True
+    return True, username
 
 # Validate user input for signing up
 def validate_signup_user_input(phone, street_num, state, zipcode):
@@ -210,6 +210,7 @@ def signup(connection):
 # Prompt user to sign up or login
 def prompt_login_signup(connection):
     successful_login = False
+    current_user = None
 
     # continue prompting user to login or signup
     while (not successful_login):
@@ -222,11 +223,7 @@ def prompt_login_signup(connection):
         # allow user to choose by number or by word
         if (choice == "1" or choice == "login"):
             # navigate to login page
-            successful_login = login(connection)
-
-            # TODO: CONTINUE HERE
-            if (successful_login):
-                print("COMMUNITY RENTAL MAIN PAGE")
+            successful_login, current_user = login(connection)
 
         elif (choice == "2" or choice == "sign up"):
             # navigate to sign up page
@@ -240,15 +237,20 @@ def prompt_login_signup(connection):
         else:
             print("Invalid option. Please enter '1' or 'Login' to login, '2' or 'Sign Up' to sign up, "
                   "'3' or 'Quit' to exit.")
-    return
+
+    return successful_login, current_user
 
 def start_community_rentals_app(connection):
     # welcome message
     print("\nWelcome to the Community Rentals App!")
 
     # prompt user to login or signup
-    prompt_login_signup(connection)
+    successful_login, current_user = prompt_login_signup(connection)
 
+    # TODO: CONTINUE HERE
+    if (successful_login and current_user != None):
+        print("Welcome, " + current_user + "!")
+        print("-- COMMUNITY RENTAL MAIN PAGE -- ")
 
 
 if __name__ == '__main__':
