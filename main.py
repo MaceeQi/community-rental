@@ -670,6 +670,57 @@ def profile(current_user):
     choose_profile_menu_option(current_user)
 
 
+# Retrieve user's listings from database
+def get_user_listings(current_user):
+    try:
+        # instantiate cursor for connection
+        cursor = connection.cursor()
+
+        # call procedure to retrieve user's listings
+        cursor.callproc("get_user_listings", [current_user, ])
+        result = cursor.fetchall()
+
+        return result
+
+    except pymysql.Error as e:
+        # catch any errors produced by mysql
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+def display_user_listings(user_listings):
+    # Display user's listings including item, description, price, quantity, average_rating, and category
+    if (len(user_listings) == 0):
+        # User does not have any listings
+        print("You currently do not have any listings\n")
+    else:
+        # User has listings
+        for i in range(len(user_listings)):
+            item = str(user_listings[i]["item"])
+            description = user_listings[i]["description"]
+            price = user_listings[i]["price"]
+            quantity = str(user_listings[i]["quantity"])
+            avg_rating = user_listings[i]["average_rating"]
+            category = user_listings[i]["category"]
+            print("%d) Item ID: %s\tItem description: %s\tPrice: $%s\tQuantity: %s\tRating: %s\tCategory: %s" %
+                  (i + 1, item, description, price, quantity, avg_rating, category))
+
+
+def user_listings(current_user):
+    # Retrieve user's listings from database
+    results = get_user_listings(current_user)
+
+    # Display user's listings
+    display_user_listings(results)
+
+
+def listings_page(current_user):
+    print("\n-- %s's Listings --" % current_user)
+
+    # Retrieve and display user's listings
+    user_listings(current_user)
+
+    # TODO: display menu options for listings page
+
 
 # Menu options for home page after log in
 def display_menu_options():
@@ -691,8 +742,8 @@ def home_menu(current_user):
             profile(current_user)
 
         elif (selection == "2"):
-            # TODO: navigate to manage listings page
-            print("\nMANAGE LISTINGS PAGE")
+            # navigate to manage listings page
+            listings_page(current_user)
 
         elif (selection == "3"):
             # navigate back to log in screen
