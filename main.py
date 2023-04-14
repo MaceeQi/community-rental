@@ -348,7 +348,7 @@ def display_all_user_info(basic_info, payment_info, payment_preference):
     else:
         for i in range(len(payment_preference)):
             preferred_type = payment_preference[i]["type"]
-            print("%d) Type: %s\n" % (i + 1, preferred_type))
+            print("%d) %s\n" % (i + 1, preferred_type))
 
 
 # Retrieve and display user info from database
@@ -456,6 +456,13 @@ def update_address(current_user):
         print('Error: %d: %s' % (e.args[0], e.args[1]))
 
 
+def validate_cc_type(cc_type):
+    if (cc_type.upper() != "VISA" and cc_type.upper() != "AMERICAN EXPRESS" and cc_type.upper() != "MASTERCARD"):
+        print("* Credit card type: Must be Visa, American Express, or Mastercard")
+        return True
+    return False
+
+
 def validate_cc_info(cc_number, expiration_date, cc_type):
     input_error = False
 
@@ -472,11 +479,12 @@ def validate_cc_info(cc_number, expiration_date, cc_type):
         input_error = True
 
     # validate credit card type
-    if (cc_type.upper() != "VISA" and cc_type.upper() != "AMERICAN EXPRESS" and cc_type.upper() != "MASTERCARD"):
-        print("* Credit card type: Must be Visa, American Express, or Mastercard")
-        input_error = True
+    type_error = validate_cc_type(cc_type)
 
-    return input_error
+    if (input_error or type_error):
+        return True
+    return False
+
 
 def create_payment_info(current_user):
     input_error = True
@@ -532,6 +540,51 @@ def delete_payment_info(current_user):
         print('Error: %d: %s' % (e.args[0], e.args[1]))
 
 
+def create_payment_preference(current_user):
+    input_error = True
+    print("\n-- Add Payment Preference --")
+
+    try:
+        # instantiate cursor for connection
+        cursor = connection.cursor()
+
+        # check to make sure user is seller
+        seller_query = "SELECT (user_is_seller(%s)) AS seller;"
+        cursor.execute(seller_query, current_user)
+        is_seller = cursor.fetchone()
+
+        if (is_seller["seller"]):
+            # user is seller - can add payment preference
+            # Get payment preference from user
+            while (input_error):
+                cc_type = input("Credit card type preference (Visa, Mastercard, American Express): ")
+                input_error = validate_cc_type(cc_type)
+
+            try:
+                # add user's payment preference to database
+                cursor.callproc("user_adds_payment_preference", [current_user, cc_type, ])
+
+                # commit updated data
+                connection.commit()
+
+                # update success and show new updated values
+                print("\nPayment preference successfully added!\n")
+                user_info(current_user)
+
+            except pymysql.Error as e:
+                # catch any errors produced by mysql
+                print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+        else:
+            # user is not seller - cannot add payment preference until they create a listing to become a seller
+            print("Sorry, you are not a seller. Please create a listing to become a seller before adding "
+                  "a payment preference.")
+
+    except pymysql.Error as e:
+        # catch any errors produced by mysql
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
 # Menu options for profile page
 def display_profile_menu_options():
     print("\nWhat would you like to do?")
@@ -567,8 +620,8 @@ def choose_profile_menu_option(current_user):
             delete_payment_info(current_user)
 
         elif (selection == "6"):
-            # TODO: Add new payment preference
-            print("ADD PAYMENT PREFERENCE")
+            # Add new payment preference
+            create_payment_preference(current_user)
 
         elif (selection == "7"):
             # TODO: Delete payment preference
@@ -618,7 +671,7 @@ def home_menu(current_user):
             print("\nMANAGE LISTINGS PAGE")
 
         elif (selection == "3"):
-            # TODO: logout - navigate back to login screen or quit?
+            # navigate back to log in screen
             logout = True
 
         else:
@@ -633,7 +686,7 @@ def start_community_rentals_app():
     # welcome message
     print("\nWelcome to the Community Rentals App!")
 
-    # prompt user to login or signup
+    # prompt user to log in or signup
     successful_login, current_user = prompt_login_signup()
 
     # navigate to home page if login successful
