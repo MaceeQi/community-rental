@@ -308,11 +308,25 @@ def display_all_user_info(basic_info, payment_info, payment_preference):
     city = basic_info["city"]
     state = basic_info["state"]
     zipcode = basic_info["zipcode"]
-    print("First Name: %s\nLast Name: %s\nPhone: %s\nStreet: %s\nCity: %s\nState: %s\nZipcode: %s"
+    print("-- Basic Info --")
+    print("First Name: %s\nLast Name: %s\nPhone: %s\nStreet: %s\nCity: %s\nState: %s\nZipcode: %s\n"
           % (first_name, last_name, phone, street_address, city, state, zipcode))
 
+    # Payment info: display cc number, expiration date, type (or none if no payment info exists)
+    print("-- Payment Info --")
+    if (len(payment_info) == 0):
+        print("None")
+    else:
+        for row in payment_info:
+            cc_number = row["cc_number"]
+            expiration_date = row["expiration_date"]
+            cc_type = row["type"]
+            print("CC Number: %s\nExpiration Date: %s\nType: %s\n")
+
+
+
 def profile(connection, current_user):
-    print("\n%s's Profile:\n" % current_user)
+    print("\n%s's Profile\n" % current_user)
 
     # Retrieve user's basic info
     basic_info = get_user_info(connection, current_user)
