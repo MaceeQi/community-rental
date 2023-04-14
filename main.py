@@ -348,7 +348,7 @@ def display_all_user_info(basic_info, payment_info, payment_preference):
     else:
         for i in range(len(payment_preference)):
             preferred_type = payment_preference[i]["type"]
-            print("%d) %s\n" % (i + 1, preferred_type))
+            print("%d) %s" % (i + 1, preferred_type))
 
 
 # Retrieve and display user info from database
@@ -532,7 +532,7 @@ def delete_payment_info(current_user):
         connection.commit()
 
         # update success and show new updated values
-        print("\nPayment info successfully deleted!\n")
+        print("\nPayment info deleted!\n")
         user_info(current_user)
 
     except pymysql.Error as e:
@@ -585,6 +585,30 @@ def create_payment_preference(current_user):
         print('Error: %d: %s' % (e.args[0], e.args[1]))
 
 
+def delete_payment_preference(current_user):
+    # Get cc type to be deleted from payment preference
+    print("\n-- Delete Payment Preference --")
+    cc_type = input("Enter the credit card type you no longer prefer: ")
+
+    try:
+        # instantiate cursor for connection
+        cursor = connection.cursor()
+
+        # delete user association with payment preference from database
+        cursor.callproc("user_deletes_payment_preference", [current_user, cc_type, ])
+
+        # commit updated data
+        connection.commit()
+
+        # update success and show new updated values
+        print("\nPayment preference deleted!\n")
+        user_info(current_user)
+
+    except pymysql.Error as e:
+        # catch any errors produced by mysql
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
 # Menu options for profile page
 def display_profile_menu_options():
     print("\nWhat would you like to do?")
@@ -624,8 +648,8 @@ def choose_profile_menu_option(current_user):
             create_payment_preference(current_user)
 
         elif (selection == "7"):
-            # TODO: Delete payment preference
-            print("DELETE PAYMENT PREFERENCE")
+            # Delete payment preference
+            delete_payment_preference(current_user)
 
         elif (selection == "8"):
             # exit profile page - return to home
