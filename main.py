@@ -57,7 +57,7 @@ def prompt_try_again():
     next_steps = ""
 
     while (not exit):
-        next_steps = input("\nWould you liked to try again (y/n)? ").lower()
+        next_steps = input("\nWould you like to try again (y/n)? ").lower()
 
         if (next_steps == "n" or next_steps == "y"):
             exit = True
@@ -68,7 +68,7 @@ def prompt_try_again():
 
 # login function
 def login(connection):
-    print("\nLogin")
+    print("\nLog In")
 
     # prompt user to enter login credentials
     exit = False
@@ -221,14 +221,14 @@ def prompt_login_signup(connection):
 
     # continue prompting user to login or signup
     while (not successful_login):
-        print("\nWould you like to:\n1. Login\n2. Sign Up\n3. Quit")
+        print("\nWould you like to:\n1. Log in\n2. Sign up\n3. Quit")
         choice = input("Please select an option: ")
 
         # convert choice to all lowercase
         choice = choice.lower()
 
         # allow user to choose by number or by word
-        if (choice == "1" or choice == "login"):
+        if (choice == "1" or choice == "log in"):
             # navigate to login page
             successful_login, current_user = login(connection)
 
@@ -241,7 +241,7 @@ def prompt_login_signup(connection):
             quit_program(connection)
 
         else:
-            print("Invalid option. Please enter '1' or 'Login' to login, '2' or 'Sign Up' to sign up, "
+            print("Invalid option. Please enter '1' or 'Log in' to log in, '2' or 'Sign up' to sign up, "
                   "'3' or 'Quit' to exit.")
 
     return successful_login, current_user
@@ -333,6 +333,49 @@ def display_all_user_info(basic_info, payment_info, payment_preference):
             print("%d) Type: %s\n" % (i, preferred_type))
 
 
+# Retrieve and display user info from database
+def user_info(connection, current_user):
+    # Retrieve user's basic info
+    basic_info = get_user_info(connection, current_user)
+
+    # Retrieve user's payment info
+    payment_info = get_user_payment_info(connection, current_user)
+
+    # Retrieve user's payment preferences
+    payment_preference = get_user_payment_preference(connection, current_user)
+
+    # Display all user info
+    display_all_user_info(basic_info, payment_info, payment_preference)
+
+
+def update_user_name(connection, current_user):
+    # Get new first and last name from user input
+    print("\n-- Update Name --")
+    new_first_name = input("First name: ")
+    new_last_name = input("Last name: ")
+
+    try:
+        # instantiate cursor for connection
+        cursor = connection.cursor()
+
+        # update user's first name in database
+        cursor.callproc("update_user_first_name", [current_user, new_first_name, ])
+
+        # update user's last name in database
+        cursor.callproc("update_user_last_name", [current_user, new_last_name, ])
+
+        # commit updated data
+        connection.commit()
+
+        # update success and show new updated values
+        print("\nName successfully updated!\n")
+        user_info(connection, current_user)
+
+    except pymysql.Error as e:
+        # catch any errors produced by mysql
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
 # Menu options for profile page
 def display_profile_menu_options():
     print("\nWhat would you like to do?")
@@ -340,7 +383,7 @@ def display_profile_menu_options():
           "5. Delete payment info\n6. Add new payment preference\n7. Delete payment preference\n8. Exit profile")
 
 
-def choose_profile_menu_option():
+def choose_profile_menu_option(connection ,current_user):
     # Prompt user to choose a profile menu option until choose exit profile
     exit_profile = False
     while (not exit_profile):
@@ -348,8 +391,8 @@ def choose_profile_menu_option():
         selection = input("Choose an option #: ")
 
         if (selection == "1"):
-            # TODO: Update first and last name
-            print("UPDATE FIRST AND LAST NAME")
+            # Update first and last name
+            update_user_name(connection, current_user)
 
         elif (selection == "2"):
             # TODO: Update phone number
@@ -378,6 +421,7 @@ def choose_profile_menu_option():
         elif (selection == "8"):
             # exit profile page - return to home
             exit_profile = True
+
         else:
             # Invalid selection - prompt user to choose again
             print("Invalid option. Please choose a number that corresponds to a menu option.")
@@ -386,20 +430,11 @@ def choose_profile_menu_option():
 def profile(connection, current_user):
     print("\n%s's Profile\n" % current_user)
 
-    # Retrieve user's basic info
-    basic_info = get_user_info(connection, current_user)
-
-    # Retrieve user's payment info
-    payment_info = get_user_payment_info(connection, current_user)
-
-    # Retrieve user's payment preferences
-    payment_preference = get_user_payment_preference(connection, current_user)
-
-    # Display all user info
-    display_all_user_info(basic_info, payment_info, payment_preference)
+    # Retrieve and display user's basic info, payment info, and payment preferences
+    user_info(connection, current_user)
 
     # Display menu options for profile page
-    choose_profile_menu_option()
+    choose_profile_menu_option(connection, current_user)
 
 
 
@@ -407,7 +442,7 @@ def profile(connection, current_user):
 def display_menu_options():
     print("\n-- Community Rentals Home --")
     print("What would you like to do?")
-    print("1. Profile\n2. Manage listings\n3. Logout")
+    print("1. Profile\n2. Manage listings\n3. Log out")
 
 
 def home_menu(connection, current_user):
