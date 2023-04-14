@@ -425,10 +425,9 @@ def update_phone(current_user):
 
 def update_address(current_user):
     input_error = True
-
-    # Get new address from user input
     print("\n-- Update Address --")
 
+    # Get new address from user input
     while (input_error):
         new_street_num = input("New street number: ")
         new_street_name = input("New street name: ")
@@ -481,10 +480,9 @@ def validate_cc_info(cc_number, expiration_date, cc_type):
 
 def create_payment_info(current_user):
     input_error = True
-
-    # Get credit card info from user
     print("\n-- Add Payment Info --")
 
+    # Get credit card info from user
     while (input_error):
         cc_number = input("Credit card #: ")
         expiration_date = input("Expiration date (YYYY-MM-DD): ")
@@ -503,6 +501,30 @@ def create_payment_info(current_user):
 
         # update success and show new updated values
         print("\nPayment info successfully added!\n")
+        user_info(current_user)
+
+    except pymysql.Error as e:
+        # catch any errors produced by mysql
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+def delete_payment_info(current_user):
+    # Get credit card info from user
+    print("\n-- Delete Payment Info --")
+    cc_number = input("Enter the credit card # you would like to delete: ")
+
+    try:
+        # instantiate cursor for connection
+        cursor = connection.cursor()
+
+        # delete user association with payment info from database
+        cursor.callproc("user_deletes_payment_info", [current_user, cc_number, ])
+
+        # commit updated data
+        connection.commit()
+
+        # update success and show new updated values
+        print("\nPayment info successfully deleted!\n")
         user_info(current_user)
 
     except pymysql.Error as e:
@@ -541,8 +563,8 @@ def choose_profile_menu_option(current_user):
             create_payment_info(current_user)
 
         elif (selection == "5"):
-            # TODO: Delete payment info
-            print("DELETE PAYMENT INFO")
+            # Delete payment info
+            delete_payment_info(current_user)
 
         elif (selection == "6"):
             # TODO: Add new payment preference
