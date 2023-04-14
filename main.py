@@ -208,7 +208,7 @@ def signup(connection):
         return
 
 def quit_program(connection):
-    print("\nGoodbye!")
+    print("\nExiting...\nGoodbye!\n")
     connection.close()
     quit()
 
@@ -244,6 +244,38 @@ def prompt_login_signup(connection):
 
     return successful_login, current_user
 
+def display_menu():
+    print("\nWhat would you like to do?")
+    print("1. Profile\n2. Manage listings\n3. Logout")
+
+def home_menu(connection, current_user):
+    logout = False
+
+    # menu of options
+    while (not logout):
+        display_menu()
+        selection = input("Choose an option #: ")
+
+        if (selection == "1"):
+            # TODO: navigate to profile page
+            print("\nPROFILE PAGE")
+
+        elif (selection == "2"):
+            # TODO: navigate to manage listings page
+            print("\nMANAGE LISTINGS PAGE")
+
+        elif (selection == "3"):
+            # TODO: logout - navigate back to login screen or quit?
+            logout = True
+
+        else:
+            # Invalid selection - prompt user to choose again
+            print("Invalid option. Please choose a number that corresponds to a menu option.")
+
+    return
+
+
+
 def start_community_rentals_app(connection):
     # welcome message
     print("\nWelcome to the Community Rentals App!")
@@ -251,10 +283,13 @@ def start_community_rentals_app(connection):
     # prompt user to login or signup
     successful_login, current_user = prompt_login_signup(connection)
 
-    # TODO: CONTINUE HERE
+    # navigate to home page if login successful
     if (successful_login and current_user != None):
-        print("Welcome, " + current_user + "!")
-        print("-- COMMUNITY RENTAL MAIN PAGE -- ")
+        print("\nWelcome, " + current_user + "!")
+        home_menu(connection, current_user)
+
+    # exit program
+    quit_program(connection)
 
 
 if __name__ == '__main__':
