@@ -126,13 +126,16 @@ def login(connection):
 
     return True, username
 
-# Validate user input for signing up
-def validate_signup_user_input(phone, street_num, state, zipcode):
-    input_error = False
+
+def validate_phone_input(phone):
     if (not phone.isnumeric() or len(phone) > 11):
         print("* Phone number: Must be all numbers and cannot be longer than 11 digits")
-        input_error = True
+        return True
+    return False
 
+
+def validate_address_input(street_num, state, zipcode):
+    input_error = False
     if (not street_num.isnumeric()):
         print("* Street number: Must be all numbers")
         input_error = True
@@ -144,8 +147,21 @@ def validate_signup_user_input(phone, street_num, state, zipcode):
     if (not zipcode.isnumeric() or len(zipcode) > 5):
         print("* Zipcode: Valid zipcodes are all numbers and are 5 digits long")
         input_error = True
-
     return input_error
+
+
+# Validate user input for signing up
+def validate_signup_user_input(phone, street_num, state, zipcode):
+    # validate phone number
+    phone_error = validate_phone_input(phone)
+
+    # validate address
+    address_error = validate_address_input(street_num, state, zipcode)
+
+    if (phone_error or address_error):
+        return True
+    else:
+        return False
 
 
 # sign up function
@@ -376,6 +392,35 @@ def update_user_name(connection, current_user):
         print('Error: %d: %s' % (e.args[0], e.args[1]))
 
 
+def update_phone(connection, current_user):
+    input_error = True
+
+    # Get new phone number from user input
+    print("\n-- Update Phone Number --")
+
+    while (input_error):
+        new_phone = input("New phone: ")
+        input_error = validate_phone_input(new_phone)
+
+    try:
+        # instantiate cursor for connection
+        cursor = connection.cursor()
+
+        # update user's phone number in database
+        cursor.callproc("update_user_phone", [current_user, new_phone, ])
+
+        # commit updated data
+        connection.commit()
+
+        # update success and show new updated values
+        print("\nPhone number successfully updated!\n")
+        user_info(connection, current_user)
+
+    except pymysql.Error as e:
+        # catch any errors produced by mysql
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
 # Menu options for profile page
 def display_profile_menu_options():
     print("\nWhat would you like to do?")
@@ -395,8 +440,8 @@ def choose_profile_menu_option(connection ,current_user):
             update_user_name(connection, current_user)
 
         elif (selection == "2"):
-            # TODO: Update phone number
-            print("UPDATE PHONE")
+            # Update phone number
+            update_phone(connection, current_user)
 
         elif (selection == "3"):
             # TODO: Update address
