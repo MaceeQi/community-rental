@@ -207,6 +207,11 @@ def signup(connection):
                 continue
         return
 
+def quit_program(connection):
+    print("\nGoodbye!")
+    connection.close()
+    quit()
+
 # Prompt user to sign up or login
 def prompt_login_signup(connection):
     successful_login = False
@@ -231,8 +236,7 @@ def prompt_login_signup(connection):
 
         elif (choice == "3" or choice == "quit"):
             # quit program
-            print("\nGoodbye!")
-            quit()
+            quit_program(connection)
 
         else:
             print("Invalid option. Please enter '1' or 'Login' to login, '2' or 'Sign Up' to sign up, "
