@@ -552,6 +552,24 @@ CREATE PROCEDURE user_deletes_payment_info( IN username_p VARCHAR(64),
 DELIMITER ;
 
 
+-- user deletes payment preference
+-- delete user's association to payment type preference
+DROP PROCEDURE IF EXISTS user_deletes_payment_preference;
+DELIMITER $$
+CREATE PROCEDURE user_deletes_payment_preference( IN username_p VARCHAR(64),
+	IN type_p ENUM('VISA','AMERICAN EXPRESS','MASTERCARD') )
+    BEGIN
+		-- delete user and payment type association from payment_preference table
+        IF EXISTS (SELECT * FROM payment_preference WHERE
+			seller = username_p AND type = type_p)
+            THEN
+				DELETE FROM payment_preference WHERE
+                seller = username_p AND type = type_p;
+		END IF;
+    END $$
+DELIMITER ;
+
+
 -- create new listing
 -- use item that already exists in item table
 DROP PROCEDURE IF EXISTS create_listing;
