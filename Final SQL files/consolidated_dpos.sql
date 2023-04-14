@@ -1,5 +1,6 @@
 USE community_rentals;
 
+
 -- Database programming objects for community rental project
 
 -- *******************************************************************************************
@@ -132,6 +133,18 @@ CREATE PROCEDURE search_user(name_p VARCHAR(64))
 BEGIN
 	SELECT * FROM user HAVING username = name_p OR first_name = name_p OR last_name = name_p;
 END$$
+DELIMITER ;
+
+
+-- retrieve user info
+-- get all attributes of user based on username
+DROP PROCEDURE IF EXISTS get_user_info;
+DELIMITER $$
+CREATE PROCEDURE get_user_info( IN username_p VARCHAR(64) )
+	BEGIN
+		SELECT * FROM user
+            WHERE user.username = username_p;
+    END $$
 DELIMITER ;
 
 

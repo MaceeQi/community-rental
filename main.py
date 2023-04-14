@@ -207,10 +207,12 @@ def signup(connection):
                 continue
         return
 
+
 def quit_program(connection):
     print("\nExiting...\nGoodbye!\n")
     connection.close()
     quit()
+
 
 # Prompt user to sign up or login
 def prompt_login_signup(connection):
@@ -244,21 +246,105 @@ def prompt_login_signup(connection):
 
     return successful_login, current_user
 
-def display_menu():
+
+# Retrieve user's basic info from database
+def get_user_info(connection, current_user):
+    try:
+        # instantiate cursor for connection
+        cursor = connection.cursor()
+
+        # call get_user_info procedure to retrieve user's basic info based on username
+        cursor.callproc("get_user_info", [current_user, ])
+        result = cursor.fetchone()
+
+        return result
+
+    except pymysql.Error as e:
+        # catch any errors produced by mysql
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+# Retrieve user's payment info from database
+def get_user_payment_info(connection, current_user):
+    try:
+        # instantiate cursor for connection
+        cursor = connection.cursor()
+
+        # get user's stored payment info
+        cursor.callproc("get_user_payment_info", [current_user, ])
+        result = cursor.fetchall()
+
+        return result
+
+    except pymysql.Error as e:
+        # catch any errors produced by mysql
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+# Retrieve user's payment preferences from database
+def get_user_payment_preference(connection, current_user):
+    try:
+        # instantiate cursor for connection
+        cursor = connection.cursor()
+
+        # get user's stored payment preferences
+        cursor.callproc("get_user_payment_preference", [current_user, ])
+        result = cursor.fetchall()
+
+        return result
+
+    except pymysql.Error as e:
+        # catch any errors produced by mysql
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+# Display all user info (basic info, payment info, and payment preference)
+def display_all_user_info(basic_info, payment_info, payment_preference):
+    # Basic info: only display username, first name, last name, phone, address
+    first_name = basic_info["first_name"]
+    last_name = basic_info["last_name"]
+    phone = basic_info["phone"]
+    street_address = str(basic_info["street_number"]) + " " + basic_info["street_name"]
+    city = basic_info["city"]
+    state = basic_info["state"]
+    zipcode = basic_info["zipcode"]
+    print("First Name: %s\nLast Name: %s\nPhone: %s\nStreet: %s\nCity: %s\nState: %s\nZipcode: %s"
+          % (first_name, last_name, phone, street_address, city, state, zipcode))
+
+def profile(connection, current_user):
+    print("\n%s's Profile:\n" % current_user)
+
+    # Retrieve user's basic info
+    basic_info = get_user_info(connection, current_user)
+
+    # Retrieve user's payment info
+    payment_info = get_user_payment_info(connection, current_user)
+
+    # Retrieve user's payment preferences
+    payment_preference = get_user_payment_preference(connection, current_user)
+
+    # Display all user info
+    display_all_user_info(basic_info, payment_info, payment_preference)
+
+
+
+# Menu options for home page after log in
+def display_menu_options():
     print("\nWhat would you like to do?")
     print("1. Profile\n2. Manage listings\n3. Logout")
+
 
 def home_menu(connection, current_user):
     logout = False
 
     # menu of options
     while (not logout):
-        display_menu()
+        display_menu_options()
         selection = input("Choose an option #: ")
 
         if (selection == "1"):
             # TODO: navigate to profile page
-            print("\nPROFILE PAGE")
+            profile(connection, current_user)
 
         elif (selection == "2"):
             # TODO: navigate to manage listings page
