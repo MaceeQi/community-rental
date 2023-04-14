@@ -1,3 +1,5 @@
+import datetime
+
 import pymysql
 import bcrypt
 
@@ -337,16 +339,16 @@ def display_all_user_info(basic_info, payment_info, payment_preference):
             cc_number = payment_info[i]["cc_number"]
             expiration_date = payment_info[i]["expiration_date"]
             cc_type = payment_info[i]["type"]
-            print("%d) CC Number: %s\tExpiration Date: %s\tType: %s\n" % (i, cc_number, expiration_date, cc_type))
+            print("%d) CC Number: %s\tExpiration Date: %s\tType: %s" % (i + 1, cc_number, expiration_date, cc_type))
 
     # Payment preference: display cc types the user prefers (or none if no payment preference exists)
-    print("-- Payment Preference --")
+    print("\n-- Payment Preference --")
     if (len(payment_preference) == 0):
         print("None\n")
     else:
         for i in range(len(payment_preference)):
             preferred_type = payment_preference[i]["type"]
-            print("%d) Type: %s\n" % (i, preferred_type))
+            print("%d) Type: %s\n" % (i + 1, preferred_type))
 
 
 # Retrieve and display user info from database
@@ -455,6 +457,59 @@ def update_address(current_user):
         print('Error: %d: %s' % (e.args[0], e.args[1]))
 
 
+def validate_cc_info(cc_number, expiration_date, cc_type):
+    input_error = False
+
+    # validate credit card number
+    if (len(cc_number) > 16 or not cc_number.isnumeric()):
+        print("* Credit card number: Must be all numbers and no more than 16 digits")
+        input_error = True
+
+    # validate expiration date
+    try:
+        datetime.date.fromisoformat(expiration_date)
+    except ValueError:
+        print("* Expiration date: Must be in the format YYYY-MM-DD")
+        input_error = True
+
+    # validate credit card type
+    if (cc_type.upper() != "VISA" and cc_type.upper() != "AMERICAN EXPRESS" and cc_type.upper() != "MASTERCARD"):
+        print("* Credit card type: Must be Visa, American Express, or Mastercard")
+        input_error = True
+
+    return input_error
+
+def create_payment_info(current_user):
+    input_error = True
+
+    # Get credit card info from user
+    print("\n-- Add Payment Info --")
+
+    while (input_error):
+        cc_number = input("Credit card #: ")
+        expiration_date = input("Expiration date (YYYY-MM-DD): ")
+        cc_type = input("Credit card type (Visa, Mastercard, American Express): ")
+        input_error = validate_cc_info(cc_number, expiration_date, cc_type)
+
+    try:
+        # instantiate cursor for connection
+        cursor = connection.cursor()
+
+        # add new payment info to database and associate with user
+        cursor.callproc("user_adds_payment_info", [current_user, cc_number, expiration_date, cc_type, ])
+
+        # commit updated data
+        connection.commit()
+
+        # update success and show new updated values
+        print("\nPayment info successfully added!\n")
+        user_info(current_user)
+
+    except pymysql.Error as e:
+        # catch any errors produced by mysql
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
 # Menu options for profile page
 def display_profile_menu_options():
     print("\nWhat would you like to do?")
@@ -482,8 +537,8 @@ def choose_profile_menu_option(current_user):
             update_address(current_user)
 
         elif (selection == "4"):
-            # TODO: Add new payment info
-            print("ADD PAYMENT INFO")
+            # Add new payment info
+            create_payment_info(current_user)
 
         elif (selection == "5"):
             # TODO: Delete payment info
