@@ -691,7 +691,7 @@ def display_user_listings(user_listings):
     # Display user's listings including item, description, price, quantity, average_rating, and category
     if (len(user_listings) == 0):
         # User does not have any listings
-        print("You currently do not have any listings\n")
+        print("You currently do not have any listings")
     else:
         # User has listings
         for i in range(len(user_listings)):
@@ -713,13 +713,48 @@ def user_listings(current_user):
     display_user_listings(results)
 
 
+# Menu options for listings page
+def display_listings_menu_options():
+    print("\nWhat would you like to do?")
+    print("1. Create listing\n2. Update listing\n3. Delete listing\n4. Exit listings")
+
+
+def choose_listings_menu_option(current_user):
+    # Prompt user to choose a listings menu option until choose exit listings
+    exit_listings = False
+    while (not exit_listings):
+        display_listings_menu_options()
+        selection = input("Choose an option #: ")
+
+        if (selection == "1"):
+            # TODO: create listing
+            print("CREATE LISTING")
+
+        elif (selection == "2"):
+            # TODO: update listing
+            print("UPDATE LISTING")
+
+        elif (selection == "3"):
+            # TODO: delete listing
+            print("DELETE LISTING")
+
+        elif (selection == "4"):
+            # exit listings page - return to home
+            exit_listings = True
+
+        else:
+            # Invalid selection - prompt user to choose again
+            print("Invalid option. Please choose a number that corresponds to a menu option.")
+
+
 def listings_page(current_user):
     print("\n-- %s's Listings --" % current_user)
 
     # Retrieve and display user's listings
     user_listings(current_user)
 
-    # TODO: display menu options for listings page
+    # Display menu options for listings page
+    choose_listings_menu_option(current_user)
 
 
 # Menu options for home page after log in
