@@ -315,7 +315,7 @@ def display_all_user_info(basic_info, payment_info, payment_preference):
     # Payment info: display user's cc number, expiration date, type (or none if no payment info exists)
     print("-- Payment Info --")
     if (len(payment_info) == 0):
-        print("None")
+        print("None\n")
     else:
         for i in range(len(payment_info)):
             cc_number = payment_info[i]["cc_number"]
@@ -326,11 +326,61 @@ def display_all_user_info(basic_info, payment_info, payment_preference):
     # Payment preference: display cc types the user prefers (or none if no payment preference exists)
     print("-- Payment Preference --")
     if (len(payment_preference) == 0):
-        print("None")
+        print("None\n")
     else:
         for i in range(len(payment_preference)):
             preferred_type = payment_preference[i]["type"]
             print("%d) Type: %s\n" % (i, preferred_type))
+
+
+# Menu options for profile page
+def display_profile_menu_options():
+    print("\nWhat would you like to do?")
+    print("1. Update name\n2. Update phone number\n3. Update address\n4. Add new payment info\n"
+          "5. Delete payment info\n6. Add new payment preference\n7. Delete payment preference\n8. Exit profile")
+
+
+def choose_profile_menu_option():
+    # Prompt user to choose a profile menu option until choose exit profile
+    exit_profile = False
+    while (not exit_profile):
+        display_profile_menu_options()
+        selection = input("Choose an option #: ")
+
+        if (selection == "1"):
+            # TODO: Update first and last name
+            print("UPDATE FIRST AND LAST NAME")
+
+        elif (selection == "2"):
+            # TODO: Update phone number
+            print("UPDATE PHONE")
+
+        elif (selection == "3"):
+            # TODO: Update address
+            print("UPDATE ADDRESS")
+
+        elif (selection == "4"):
+            # TODO: Add new payment info
+            print("ADD PAYMENT INFO")
+
+        elif (selection == "5"):
+            # TODO: Delete payment info
+            print("DELETE PAYMENT INFO")
+
+        elif (selection == "6"):
+            # TODO: Add new payment preference
+            print("ADD PAYMENT PREFERENCE")
+
+        elif (selection == "7"):
+            # TODO: Delete payment preference
+            print("DELETE PAYMENT PREFERENCE")
+
+        elif (selection == "8"):
+            # exit profile page - return to home
+            exit_profile = True
+        else:
+            # Invalid selection - prompt user to choose again
+            print("Invalid option. Please choose a number that corresponds to a menu option.")
 
 
 def profile(connection, current_user):
@@ -348,11 +398,15 @@ def profile(connection, current_user):
     # Display all user info
     display_all_user_info(basic_info, payment_info, payment_preference)
 
+    # Display menu options for profile page
+    choose_profile_menu_option()
+
 
 
 # Menu options for home page after log in
 def display_menu_options():
-    print("\nWhat would you like to do?")
+    print("\n-- Community Rentals Home --")
+    print("What would you like to do?")
     print("1. Profile\n2. Manage listings\n3. Logout")
 
 
@@ -365,7 +419,7 @@ def home_menu(connection, current_user):
         selection = input("Choose an option #: ")
 
         if (selection == "1"):
-            # TODO: navigate to profile page
+            # navigate to profile page
             profile(connection, current_user)
 
         elif (selection == "2"):
