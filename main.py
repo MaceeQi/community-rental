@@ -312,17 +312,25 @@ def display_all_user_info(basic_info, payment_info, payment_preference):
     print("First Name: %s\nLast Name: %s\nPhone: %s\nStreet: %s\nCity: %s\nState: %s\nZipcode: %s\n"
           % (first_name, last_name, phone, street_address, city, state, zipcode))
 
-    # Payment info: display cc number, expiration date, type (or none if no payment info exists)
+    # Payment info: display user's cc number, expiration date, type (or none if no payment info exists)
     print("-- Payment Info --")
     if (len(payment_info) == 0):
         print("None")
     else:
-        for row in payment_info:
-            cc_number = row["cc_number"]
-            expiration_date = row["expiration_date"]
-            cc_type = row["type"]
-            print("CC Number: %s\nExpiration Date: %s\nType: %s\n")
+        for i in range(len(payment_info)):
+            cc_number = payment_info[i]["cc_number"]
+            expiration_date = payment_info[i]["expiration_date"]
+            cc_type = payment_info[i]["type"]
+            print("%d) CC Number: %s\tExpiration Date: %s\tType: %s\n" % (i, cc_number, expiration_date, cc_type))
 
+    # Payment preference: display cc types the user prefers (or none if no payment preference exists)
+    print("-- Payment Preference --")
+    if (len(payment_preference) == 0):
+        print("None")
+    else:
+        for i in range(len(payment_preference)):
+            preferred_type = payment_preference[i]["type"]
+            print("%d) Type: %s\n" % (i, preferred_type))
 
 
 def profile(connection, current_user):
