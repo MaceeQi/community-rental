@@ -53,26 +53,26 @@ def check_password(input_password, stored_password):
 
 # Prompt to ask user whether they would like to continue or not
 def prompt_try_again():
-    exit = False
+    exit_page = False
     next_steps = ""
 
-    while (not exit):
+    while (not exit_page):
         next_steps = input("\nWould you like to try again (y/n)? ").lower()
 
         if (next_steps == "n" or next_steps == "y"):
-            exit = True
+            exit_page = True
         else:
             print("Please enter a valid input: 'y' or 'n'")
 
     return next_steps
 
 # login function
-def login(connection):
+def login():
     print("\nLog In")
 
     # prompt user to enter login credentials
-    exit = False
-    while (not exit):
+    exit_page = False
+    while (not exit_page):
         username = input("\nUsername: ")
         password = input("Password: ")
 
@@ -106,7 +106,7 @@ def login(connection):
                 # check whether passwords match
                 if (check_password(input_password, stored_password)):
                     # password matches what's stored in database
-                    exit = True
+                    exit_page = True
                     print("\nYou have successfully logged in! Directing you to the home page...")
 
                 else:
@@ -165,12 +165,12 @@ def validate_signup_user_input(phone, street_num, state, zipcode):
 
 
 # sign up function
-def signup(connection):
+def signup():
     print("\nSign Up")
 
     # prompt user for info needed for creating a new user
-    exit = False
-    while (not exit):
+    exit_page = False
+    while (not exit_page):
         username = input("\nUsername: ")
         password = input("Password: ")
         first_name = input("First name: ")
@@ -190,7 +190,7 @@ def signup(connection):
         if (input_error):
             if (prompt_try_again() == "n"):
                 # user doesn't want to continue - navigate back to sign up/login page
-                exit = True
+                exit_page = True
             else:
                 # user wants to try signing up again
                 continue
@@ -210,7 +210,7 @@ def signup(connection):
 
                 # commit the changes
                 connection.commit()
-                exit = True
+                exit_page = True
                 print("You have successfully signed up! You may now login with the credentials you signed up with.")
 
             except pymysql.Error as e:
@@ -224,14 +224,14 @@ def signup(connection):
         return
 
 
-def quit_program(connection):
+def quit_program():
     print("\nExiting...\nGoodbye!\n")
     connection.close()
     quit()
 
 
 # Prompt user to sign up or login
-def prompt_login_signup(connection):
+def prompt_login_signup():
     successful_login = False
     current_user = None
 
@@ -246,15 +246,15 @@ def prompt_login_signup(connection):
         # allow user to choose by number or by word
         if (choice == "1" or choice == "log in"):
             # navigate to login page
-            successful_login, current_user = login(connection)
+            successful_login, current_user = login()
 
         elif (choice == "2" or choice == "sign up"):
             # navigate to sign up page
-            signup(connection)
+            signup()
 
         elif (choice == "3" or choice == "quit"):
             # quit program
-            quit_program(connection)
+            quit_program()
 
         else:
             print("Invalid option. Please enter '1' or 'Log in' to log in, '2' or 'Sign up' to sign up, "
@@ -264,7 +264,7 @@ def prompt_login_signup(connection):
 
 
 # Retrieve user's basic info from database
-def get_user_info(connection, current_user):
+def get_user_info(current_user):
     try:
         # instantiate cursor for connection
         cursor = connection.cursor()
@@ -281,7 +281,7 @@ def get_user_info(connection, current_user):
 
 
 # Retrieve user's payment info from database
-def get_user_payment_info(connection, current_user):
+def get_user_payment_info(current_user):
     try:
         # instantiate cursor for connection
         cursor = connection.cursor()
@@ -298,7 +298,7 @@ def get_user_payment_info(connection, current_user):
 
 
 # Retrieve user's payment preferences from database
-def get_user_payment_preference(connection, current_user):
+def get_user_payment_preference(current_user):
     try:
         # instantiate cursor for connection
         cursor = connection.cursor()
@@ -350,21 +350,21 @@ def display_all_user_info(basic_info, payment_info, payment_preference):
 
 
 # Retrieve and display user info from database
-def user_info(connection, current_user):
+def user_info(current_user):
     # Retrieve user's basic info
-    basic_info = get_user_info(connection, current_user)
+    basic_info = get_user_info(current_user)
 
     # Retrieve user's payment info
-    payment_info = get_user_payment_info(connection, current_user)
+    payment_info = get_user_payment_info(current_user)
 
     # Retrieve user's payment preferences
-    payment_preference = get_user_payment_preference(connection, current_user)
+    payment_preference = get_user_payment_preference(current_user)
 
     # Display all user info
     display_all_user_info(basic_info, payment_info, payment_preference)
 
 
-def update_user_name(connection, current_user):
+def update_user_name(current_user):
     # Get new first and last name from user input
     print("\n-- Update Name --")
     new_first_name = input("First name: ")
@@ -385,14 +385,14 @@ def update_user_name(connection, current_user):
 
         # update success and show new updated values
         print("\nName successfully updated!\n")
-        user_info(connection, current_user)
+        user_info(current_user)
 
     except pymysql.Error as e:
         # catch any errors produced by mysql
         print('Error: %d: %s' % (e.args[0], e.args[1]))
 
 
-def update_phone(connection, current_user):
+def update_phone(current_user):
     input_error = True
 
     # Get new phone number from user input
@@ -414,7 +414,41 @@ def update_phone(connection, current_user):
 
         # update success and show new updated values
         print("\nPhone number successfully updated!\n")
-        user_info(connection, current_user)
+        user_info(current_user)
+
+    except pymysql.Error as e:
+        # catch any errors produced by mysql
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+def update_address(current_user):
+    input_error = True
+
+    # Get new address from user input
+    print("\n-- Update Address --")
+
+    while (input_error):
+        new_street_num = input("New street number: ")
+        new_street_name = input("New street name: ")
+        new_city = input("New city: ")
+        new_state = input("New state: ")
+        new_zipcode = input("New zipcode: ")
+        input_error = validate_address_input(new_street_num, new_state, new_zipcode)
+
+    try:
+        # instantiate cursor for connection
+        cursor = connection.cursor()
+
+        # update user's address in database
+        cursor.callproc("update_user_address", [current_user, new_street_num, new_street_name, new_city, new_state,
+                                                new_zipcode, ])
+
+        # commit updated data
+        connection.commit()
+
+        # update success and show new updated values
+        print("\nAddress successfully updated!\n")
+        user_info(current_user)
 
     except pymysql.Error as e:
         # catch any errors produced by mysql
@@ -428,7 +462,7 @@ def display_profile_menu_options():
           "5. Delete payment info\n6. Add new payment preference\n7. Delete payment preference\n8. Exit profile")
 
 
-def choose_profile_menu_option(connection ,current_user):
+def choose_profile_menu_option(current_user):
     # Prompt user to choose a profile menu option until choose exit profile
     exit_profile = False
     while (not exit_profile):
@@ -437,15 +471,15 @@ def choose_profile_menu_option(connection ,current_user):
 
         if (selection == "1"):
             # Update first and last name
-            update_user_name(connection, current_user)
+            update_user_name(current_user)
 
         elif (selection == "2"):
             # Update phone number
-            update_phone(connection, current_user)
+            update_phone(current_user)
 
         elif (selection == "3"):
-            # TODO: Update address
-            print("UPDATE ADDRESS")
+            # Update address
+            update_address(current_user)
 
         elif (selection == "4"):
             # TODO: Add new payment info
@@ -472,14 +506,14 @@ def choose_profile_menu_option(connection ,current_user):
             print("Invalid option. Please choose a number that corresponds to a menu option.")
 
 
-def profile(connection, current_user):
+def profile(current_user):
     print("\n%s's Profile\n" % current_user)
 
     # Retrieve and display user's basic info, payment info, and payment preferences
-    user_info(connection, current_user)
+    user_info(current_user)
 
     # Display menu options for profile page
-    choose_profile_menu_option(connection, current_user)
+    choose_profile_menu_option(current_user)
 
 
 
@@ -490,7 +524,7 @@ def display_menu_options():
     print("1. Profile\n2. Manage listings\n3. Log out")
 
 
-def home_menu(connection, current_user):
+def home_menu(current_user):
     logout = False
 
     # menu of options
@@ -500,7 +534,7 @@ def home_menu(connection, current_user):
 
         if (selection == "1"):
             # navigate to profile page
-            profile(connection, current_user)
+            profile(current_user)
 
         elif (selection == "2"):
             # TODO: navigate to manage listings page
@@ -518,20 +552,20 @@ def home_menu(connection, current_user):
 
 
 
-def start_community_rentals_app(connection):
+def start_community_rentals_app():
     # welcome message
     print("\nWelcome to the Community Rentals App!")
 
     # prompt user to login or signup
-    successful_login, current_user = prompt_login_signup(connection)
+    successful_login, current_user = prompt_login_signup()
 
     # navigate to home page if login successful
     if (successful_login and current_user != None):
         print("\nWelcome, " + current_user + "!")
-        home_menu(connection, current_user)
+        home_menu(current_user)
 
     # exit program
-    quit_program(connection)
+    quit_program()
 
 
 if __name__ == '__main__':
@@ -545,7 +579,7 @@ if __name__ == '__main__':
 
     # begin Community Rentals App
     print("\nDirecting you to the Community Rentals Application...")
-    start_community_rentals_app(connection)
+    start_community_rentals_app()
 
     # close connection
     connection.close()
