@@ -280,7 +280,7 @@ CREATE PROCEDURE get_user_listings( IN username_p VARCHAR(64) )
 		SELECT item, description, price, quantity, average_rating, 
 			rating_count, total_rating, category FROM listing
 			JOIN item ON listing.item = item.id
-			WHERE seller = username_p;
+			WHERE owner = username_p;
     END $$
 DELIMITER ;
 
@@ -401,10 +401,14 @@ CREATE FUNCTION seller_listing_count(seller_p VARCHAR(64))
 RETURNS INT DETERMINISTIC READS SQL DATA
 BEGIN
 	DECLARE listing_count INT DEFAULT 0;
-    SELECT COUNT(*) INTO listing_count FROM listing WHERE seller = seller_p;
+    SELECT COUNT(*) INTO listing_count 
+		FROM listing 
+        JOIN item ON listing.item = item.id
+        WHERE owner = seller_p;
 	RETURN (listing_count);
 END$$
 DELIMITER ;
+
 
 -- Returns the owner of the specified item
 DROP FUNCTION IF EXISTS get_item_owner;
