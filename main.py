@@ -844,6 +844,59 @@ def update_listing_page(current_user):
                 valid_listing = True
 
 
+# delete listing from database
+def delete_listing(current_user, listing):
+    # get item id associated to listing
+    item = listing.get("item")
+
+    try:
+        # delete listing from database
+        cursor.callproc("delete_listing", [item, current_user, ])
+
+        # commit updated data
+        connection.commit()
+
+        # update success and show current listings
+        print("\nListing successfully deleted!\n")
+        print("\n-- %s's Listings --" % current_user)
+        user_listings(current_user)
+
+    except pymysql.Error as e:
+        # catch any errors produced by mysql
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+def delete_listing_page(current_user):
+    print("\n-- Delete Listing --")
+
+    # check whether user has any listings before asking to choose listing to delete
+    num_listings = get_user_listings(current_user)
+
+    if (len(num_listings) == 0):
+        # user doesn't have any listings - cannot delete any
+        print("\nSorry, you currently don't have any listings to delete")
+    else:
+        # user has listings - prompt user to choose one to delete
+        valid_listing = False
+        while (not valid_listing):
+            print("\nWhich listing would you like to delete?")
+
+            # Retrieve and display user's listings
+            listings = user_listings(current_user)
+
+            selection = int(input("\nChoose listing # from the above options: "))
+            selection -= 1
+
+            # validate selection
+            if (selection >= len(listings) or selection < 0):
+                # invalid selection
+                print("Invalid listing number. Please choose a valid listing number from the options")
+            else:
+                # valid selection - delete chosen listing
+                delete_listing(current_user, listings[selection])
+                valid_listing = True
+
+
 
 # Menu options for listings page
 def display_listings_menu_options():
@@ -867,12 +920,8 @@ def choose_listings_menu_option(current_user):
             update_listing_page(current_user)
 
         elif (selection == "3"):
-            # TODO: delete listing
-            print("DELETE LISTING")
-
-            # show user's listings
-            print("\n-- %s's Listings --" % current_user)
-            user_listings(current_user)
+            # navigate to delete listing page
+            delete_listing_page(current_user)
 
         elif (selection == "4"):
             # exit listings page - return to home
