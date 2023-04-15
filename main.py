@@ -762,6 +762,13 @@ def create_new_item_listing_page(current_user):
         quantity = input("Quantity of items: ")
         input_error = validate_price_quantity_description(price, quantity, description)
 
+        # check if user wants to continue
+        if (input_error):
+            option = prompt_try_again()
+
+            if (option == "n"):
+                return
+
     # create new listing and new item in database
     create_new_item_listing(current_user, description, category, price, quantity)
 
@@ -871,18 +878,25 @@ def create_existing_item_listing_page(current_user):
             # Retrieve and display user's items that aren't part of any active listings
             display_inactive_items(filtered_items)
 
-            selection = int(input("\nChoose an option # from the above items: "))
-            selection -= 1
+            selection = input("\nChoose an option # from the above items ('Q' to exit): ")
 
-            # validate selection
-            if (selection >= len(filtered_items) or selection < 0):
-                # invalid selection
-                print("Invalid option. Please choose a valid option number from the given list\n")
+            if (selection.lower() == "q"):
+                print()
+                return
+            elif (not selection.isnumeric()):
+                print("Invalid option. Please choose a number from the given list\n")
             else:
-                # valid selection - create listing for item
-                price, quantity = prompt_listing_attributes()
-                create_existing_item_listing(current_user, filtered_items[selection], price, quantity)
-                valid_item = True
+                selection = int(selection) - 1
+
+                # validate selection
+                if (selection >= len(filtered_items) or selection < 0):
+                    # invalid selection
+                    print("Invalid option. Please choose a valid option number from the given list\n")
+                else:
+                    # valid selection - create listing for item
+                    price, quantity = prompt_listing_attributes()
+                    create_existing_item_listing(current_user, filtered_items[selection], price, quantity)
+                    valid_item = True
 
 
 # menu options for create listing page
@@ -978,18 +992,25 @@ def update_listing_page(current_user):
             # Retrieve and display user's listings
             listings = user_listings(current_user)
 
-            selection = int(input("\nChoose listing # from the above options: "))
-            selection -= 1
+            selection = input("\nChoose listing # from the above options ('Q' to exit): ")
 
-            # validate selection
-            if (selection >= len(listings) or selection < 0):
-                # invalid selection
-                print("Invalid listing number. Please choose a valid listing number from the options\n")
+            if (selection.lower() == "q"):
+                print()
+                return
+            elif (not selection.isnumeric()):
+                print("Invalid option. Please choose a valid listing number from the options\n")
             else:
-                # valid selection - update chosen listing
-                new_price, new_quantity, new_description = update_listing_values()
-                update_listing(current_user, listings[selection], new_price, new_quantity, new_description)
-                valid_listing = True
+                selection = int(selection) - 1
+
+                # validate selection
+                if (selection >= len(listings) or selection < 0):
+                    # invalid selection
+                    print("Invalid listing number. Please choose a valid listing number from the options\n")
+                else:
+                    # valid selection - update chosen listing
+                    new_price, new_quantity, new_description = update_listing_values()
+                    update_listing(current_user, listings[selection], new_price, new_quantity, new_description)
+                    valid_listing = True
 
 
 # delete listing from database
@@ -1032,17 +1053,24 @@ def delete_listing_page(current_user):
             # Retrieve and display user's listings
             listings = user_listings(current_user)
 
-            selection = int(input("\nChoose listing # from the above options: "))
-            selection -= 1
+            selection = input("\nChoose listing # from the above options ('Q' to quit): ")
 
-            # validate selection
-            if (selection >= len(listings) or selection < 0):
-                # invalid selection
-                print("Invalid listing number. Please choose a valid listing number from the options\n")
+            if (selection.lower() == "q"):
+                print()
+                return
+            elif (not selection.isnumeric()):
+                print("Invalid option. Please choose a number from the given list\n")
             else:
-                # valid selection - delete chosen listing
-                delete_listing(current_user, listings[selection])
-                valid_listing = True
+                selection = int(selection) - 1
+
+                # validate selection
+                if (selection >= len(listings) or selection < 0):
+                    # invalid selection
+                    print("Invalid listing number. Please choose a valid listing number from the options\n")
+                else:
+                    # valid selection - delete chosen listing
+                    delete_listing(current_user, listings[selection])
+                    valid_listing = True
 
 
 # Menu options for listings page
