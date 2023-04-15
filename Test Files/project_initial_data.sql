@@ -52,11 +52,11 @@ INSERT INTO item_category VALUES
     
     
 -- item
-INSERT INTO item (description, average_rating, category) VALUES
-	("mountain bike", "5", "sports equipment"),
-    ("algorithms textbook", "5", "books"),
-    ("snowboard", "5", "sports equipment"),
-    ("database systems textbook by connolly and begg", "5", "books");
+INSERT INTO item (description, owner, average_rating, category) VALUES
+	("mountain bike", "cb123", "5", "sports equipment"),
+    ("algorithms textbook", "cb123", "5", "books"),
+    ("snowboard", "cb123", "5", "sports equipment"),
+    ("database systems textbook by connolly and begg", "cb123", "5", "books");
     
     
 -- wishlist
@@ -67,10 +67,10 @@ INSERT INTO wishlist VALUES
     
 -- listing
 INSERT INTO listing VALUES
-	(1, "cb123", "50.00", 2),
-    (2, "cb123", "75.99", 1),
-    (3, "cb123", "99.99", 1),
-    (4, "cb123", "28.50", 0);
+	(1, "50.00", 2),
+    (2, "75.99", 1),
+    (3, "99.99", 1),
+    (4, "28.50", 0);
     
     
 -- rental

@@ -232,7 +232,7 @@ DELIMITER ;
 -- Search for all items in a category
 DROP PROCEDURE IF EXISTS search_items_by_category;
 DELIMITER $$
-CREATE PROCEDURE search_items(category_p VARCHAR(50))
+CREATE PROCEDURE search_items_by_category(category_p VARCHAR(50))
 BEGIN
 	SELECT * FROM item WHERE category = category_p;
 END$$
@@ -243,7 +243,7 @@ DROP PROCEDURE IF EXISTS search_items_by_seller;
 DELIMITER $$
 CREATE PROCEDURE search_items_by_seller(seller_p VARCHAR(64))
 BEGIN
-	SELECT * FROM item WHERE username = seller_p;
+	SELECT * FROM item WHERE owner = seller_p;
 END$$
 DELIMITER ;
 
@@ -529,7 +529,7 @@ DROP PROCEDURE IF EXISTS create_listing;
 DELIMITER $$
 CREATE PROCEDURE create_listing(username_p VARCHAR(64), item_p INT, price_p DECIMAL(13,2), quantity_p INT)
 BEGIN
-	-- ensure user deleting the item actually owns the item
+	-- ensure user creating the item actually owns the item
 	IF EXISTS (SELECT(get_item_owner(item_p))) THEN
 		IF NOT (username_p = get_item_owner(item_p)) THEN
 			SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = "User does not own this item";
@@ -549,6 +549,7 @@ BEGIN
 END$$
 DELIMITER ;
 
+
 -- create new listing
 -- insert new item to item table and create new listing in listing table
 DROP PROCEDURE IF EXISTS create_new_item_listing;
@@ -567,7 +568,7 @@ CREATE PROCEDURE create_new_item_listing( IN username_p VARCHAR(64),
             
 		-- create new item
 		INSERT INTO item (description, average_rating, category)
-			VALUES (item_description_p, "5", category_p);
+			VALUES (item_description_p, "0", category_p);
 			
 		-- store new item's PK into new_item variable
 		SELECT LAST_INSERT_ID() INTO new_item;
@@ -598,6 +599,24 @@ CREATE PROCEDURE delete_listing( IN item_p INT, IN username_p VARCHAR(64) )
         
 		-- delete listing
 		DELETE FROM listing WHERE item = item_p;
+    END $$
+DELIMITER ;
+
+
+-- create item
+DROP PROCEDURE IF EXISTS create_item;
+DELIMITER $$
+CREATE PROCEDURE create_item( IN username_p VARCHAR(64), IN description_p TEXT(1000),
+	IN category_p VARCHAR(50) )
+    BEGIN
+		-- set user to seller before creating new item
+        IF EXISTS (SELECT * FROM user WHERE username = username_p AND is_seller = FALSE) THEN
+			UPDATE user SET is_seller = TRUE WHERE username = username_p;
+		END IF;
+            
+		-- create new item
+		INSERT INTO item (owner, description, average_rating, category)
+			VALUES (username_p, description_p, "0", category_p);
     END $$
 DELIMITER ;
 
