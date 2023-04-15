@@ -652,14 +652,13 @@ def get_user_listings(current_user):
 
 
 def display_user_listings(user_listings):
-    # Display user's listings including item, description, price, quantity, average_rating, and category
+    # Display user's listings including item description, price, quantity, average_rating, and category
     if (len(user_listings) == 0):
         # User does not have any listings
         print("You currently do not have any listings")
     else:
         # User has listings
         for i in range(len(user_listings)):
-            item = str(user_listings[i]["item"])
             description = user_listings[i]["description"]
             price = user_listings[i]["price"]
             quantity = str(user_listings[i]["quantity"])
@@ -669,12 +668,12 @@ def display_user_listings(user_listings):
 
             if (rating_count == 0):
                 # Rating is none when there have been no ratings yet
-                print("%d) Item ID: %s\tItem description: %s\tPrice: $%s\tQuantity: %s\tRating: None\tCategory: %s" %
-                      (i + 1, item, description, price, quantity, category))
+                print("%d) Item description: %s\tPrice: $%s\tQuantity: %s\tRating: None\tCategory: %s" %
+                      (i + 1, description, price, quantity, category))
             else:
                 # Include rating # when there have been ratings
-                print("%d) Item ID: %s\tItem description: %s\tPrice: $%s\tQuantity: %s\tRating: %s\tCategory: %s" %
-                      (i + 1, item, description, price, quantity, avg_rating, category))
+                print("%d) Item description: %s\tPrice: $%s\tQuantity: %s\tRating: %s\tCategory: %s" %
+                      (i + 1, description, price, quantity, avg_rating, category))
 
 
 def user_listings(current_user):
@@ -767,6 +766,125 @@ def create_new_item_listing_page(current_user):
     create_new_item_listing(current_user, description, category, price, quantity)
 
 
+# retrieve all items owned by user from database
+def get_user_items(current_user):
+    try:
+        # retrieve user's items from database
+        cursor.callproc("search_items_by_seller", [current_user, ])
+        result = cursor.fetchall()
+
+        return result
+
+    except pymysql.Error as e:
+        # catch any errors produced by mysql
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+# filter items owned by user retrieved from database to only include items that aren't part of a listing
+def get_unlisted_user_items(current_user):
+    # get items owned by user from database
+    items = get_user_items(current_user)
+
+    # get currently active listings for user from database
+    listings = get_user_listings(current_user)
+
+    # create list to only include item id that are part of active listings
+    listings_by_item = []
+    for i in range(len(listings)):
+        listings_by_item.append(listings[i].get("item"))
+
+    # filter items that aren't part of any listings to filtered_items list
+    filtered_items = []
+    for each in items:
+        if (each.get("id") not in listings_by_item):
+            filtered_items.append(each)
+
+    return filtered_items
+
+
+# Display all items owned by user that aren't part of any active listings
+def display_inactive_items(filtered_items):
+    for i in range(len(filtered_items)):
+        description = filtered_items[i]["description"]
+        avg_rating = filtered_items[i]["average_rating"]
+        rating_count = filtered_items[i]["rating_count"]
+        category = filtered_items[i]["category"]
+
+        if (rating_count == 0):
+            # Rating is none when there have been no ratings yet
+            print("%d) Item description: %s\tRating: None\tCategory: %s" %
+                  (i + 1, description, category))
+        else:
+            # Include rating # when there have been ratings
+            print("%d) Item description: %s\tRating: %s\tCategory: %s" %
+                  (i + 1, description, avg_rating, category))
+
+
+def prompt_listing_attributes():
+    # prompt user for listing attributes
+    input_error = True
+    while (input_error):
+        price = input("Price: ")
+        quantity = input("Quantity of items: ")
+        input_error = validate_price_quantity_description(price, quantity, "")
+
+    return price, quantity
+
+
+def create_existing_item_listing(current_user, item, price, quantity):
+    item_id = item.get("id")
+
+    try:
+        # create listing from existing item in database
+        cursor.callproc("create_listing", [current_user,  item_id, price, quantity])
+
+        # commit inserted data
+        connection.commit()
+
+        # update success and show new updated listings
+        print("\nListing successfully created!\n")
+        print("\n-- %s's Listings --" % current_user)
+        user_listings(current_user)
+        print()
+
+    except pymysql.Error as e:
+        # catch any errors produced by mysql
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+def create_existing_item_listing_page(current_user):
+    print("\n-- Create Listing For Existing Item --")
+
+    # check whether user has any items that aren't part of any listings
+    filtered_items = get_unlisted_user_items(current_user)
+
+    if (len(filtered_items) == 0):
+        # user doesn't have any items that aren't part of listings - cannot create any listings from existing items
+        print("Sorry, you currently don't have any items that aren't part of any active listings. "
+              "Please create a new listing for a new item or update an active listing for any existing items\n")
+    else:
+        # user has items that aren't part of any listings - prompt user to choose one to create a listing for
+        valid_item = False
+        while (not valid_item):
+            print("Which item would you like to create a listing for?")
+
+            # Retrieve and display user's items that aren't part of any active listings
+            display_inactive_items(filtered_items)
+
+            selection = int(input("\nChoose an option # from the above items: "))
+            selection -= 1
+
+            # validate selection
+            if (selection >= len(filtered_items) or selection < 0):
+                # invalid selection
+                print("Invalid option. Please choose a valid option number from the given list\n")
+            else:
+                # valid selection - create listing for item
+                price, quantity = prompt_listing_attributes()
+                create_existing_item_listing(current_user, filtered_items[selection], price, quantity)
+                valid_item = True
+
+
 # menu options for create listing page
 def create_listing_menu_options():
     print("What kind of listing would you like to create?")
@@ -785,8 +903,8 @@ def choose_create_listing_menu_option(current_user):
             create_new_item_listing_page(current_user)
 
         elif (selection == "2"):
-            # TODO: create listing for existing item
-            print("CREATE LISTING FOR EXISTING ITEM")
+            # navigate to create listing for existing item
+            create_existing_item_listing_page(current_user)
 
         elif (selection == "3"):
             # exit create listings page - return to manage listings
@@ -925,7 +1043,6 @@ def delete_listing_page(current_user):
                 # valid selection - delete chosen listing
                 delete_listing(current_user, listings[selection])
                 valid_listing = True
-
 
 
 # Menu options for listings page
