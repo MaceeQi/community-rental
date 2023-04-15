@@ -618,8 +618,8 @@ CREATE PROCEDURE create_new_item_listing( IN username_p VARCHAR(64),
 		END IF;
             
 		-- create new item
-		INSERT INTO item (description, average_rating, category)
-			VALUES (item_description_p, "0", category_p);
+		INSERT INTO item (owner, description, average_rating, category)
+			VALUES (username_p, item_description_p, "0", category_p);
 			
 		-- store new item's PK into new_item variable
 		SELECT LAST_INSERT_ID() INTO new_item;
@@ -854,7 +854,7 @@ CREATE PROCEDURE update_listing( IN item_p INT, IN username_p VARCHAR(64),
             -- update price and quantity in listing to new values
             UPDATE listing SET price = new_price_p, 
 				quantity = new_quantity_p WHERE
-                item = item_p AND seller = username_p;
+                item = item_p;
             
             -- update item description for item associated to listing
 			UPDATE item SET description = new_item_description_p

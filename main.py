@@ -664,9 +664,17 @@ def display_user_listings(user_listings):
             price = user_listings[i]["price"]
             quantity = str(user_listings[i]["quantity"])
             avg_rating = user_listings[i]["average_rating"]
+            rating_count = user_listings[i]["rating_count"]
             category = user_listings[i]["category"]
-            print("%d) Item ID: %s\tItem description: %s\tPrice: $%s\tQuantity: %s\tRating: %s\tCategory: %s" %
-                  (i + 1, item, description, price, quantity, avg_rating, category))
+
+            if (rating_count == 0):
+                # Rating is none when there have been no ratings yet
+                print("%d) Item ID: %s\tItem description: %s\tPrice: $%s\tQuantity: %s\tRating: None\tCategory: %s" %
+                      (i + 1, item, description, price, quantity, category))
+            else:
+                # Include rating # when there have been ratings
+                print("%d) Item ID: %s\tItem description: %s\tPrice: $%s\tQuantity: %s\tRating: %s\tCategory: %s" %
+                      (i + 1, item, description, price, quantity, avg_rating, category))
 
 
 def user_listings(current_user):
@@ -675,6 +683,166 @@ def user_listings(current_user):
 
     # Display user's listings
     display_user_listings(results)
+
+    return results
+
+
+# create listing in database with new item
+def create_new_item_listing(current_user):
+    print()
+
+
+# menu options for create listing page
+def create_listing_menu_options():
+    print("What kind of listing would you like to create?")
+    print("1. Create listing for new item\n2. Create listing for existing item\n3. Exit")
+
+
+def choose_create_listing_menu_option(current_user):
+    # Prompt user to choose a create listings menu option until choose exit
+    exit_create_listings = False
+    while (not exit_create_listings):
+        create_listing_menu_options()
+        selection = input("Choose an option #: ")
+
+        if (selection == "1"):
+            # TODO: create listing for new item
+            print("CREATE LISTING FOR NEW ITEM")
+
+        elif (selection == "2"):
+            # TODO: create listing for existing item
+            print("CREATE LISTING FOR EXISTING ITEM")
+
+        elif (selection == "3"):
+            # exit create listings page - return to manage listings
+            exit_create_listings = True
+
+            # show user's listings
+            print("\n-- %s's Listings --" % current_user)
+            user_listings(current_user)
+
+        else:
+            # Invalid selection - prompt user to choose again
+            print("Invalid option. Please choose a number that corresponds to a menu option.")
+
+def create_listing_page(current_user):
+    print("\n-- Create Listing --")
+
+    # menu options - create listing on new or existing item
+    choose_create_listing_menu_option(current_user)
+
+
+# validate input for listing price and quantity, and item description before adding/updating database
+def validate_price_quantity_description(price, quantity, description):
+    price_error = False
+    quantity_error = False
+    description_error = False
+
+    # validate price
+    try:
+        # check for 2 decimal places
+        if (not len(price.rsplit('.')[-1]) == 2):
+            price_error = True
+
+        # check for price not longer than 13 digits
+        if (len(price) > 13):
+            price_error = True
+
+        # check price is a number
+        price = float(price)
+
+        # check price is not negative
+        if (price < 0):
+            price_error = True
+
+        if (price_error):
+            print("* Price: Must be a number with no more than 13 digits and must include 2 decimal places")
+
+    except ValueError:
+        print("* Price: Must be a number with no more than 13 digits and must include 2 decimal places")
+        price_error = True
+
+    # validate quantity
+    if (not quantity.isnumeric()):
+        print("* Quantity: Must be a number")
+        quantity_error = True
+
+    # validate description
+    if (len(description) > 1000):
+        print("* Description: Too long. Please shorten the description")
+        description_error = True
+
+    if (price_error or quantity_error or description_error):
+        return True
+    return False
+
+
+# prompt user for new price, quantity, and item description to update listing
+def update_listing_values():
+    input_error = True
+
+    while (input_error):
+        price = input("\nNew price: ")
+        quantity = input("New quantity: ")
+        description = input("New description: ")
+        input_error = validate_price_quantity_description(price, quantity, description)
+
+    return price, quantity, description
+
+
+# update price, quantity, and description for listing in database
+def update_listing(current_user, listing, new_price, new_quantity, new_description):
+    # get item id associated to listing
+    item = listing.get("item")
+
+    try:
+        # update listing in database
+        cursor.callproc("update_listing", [item, current_user, new_price, new_quantity, new_description, ])
+
+        # commit updated data
+        connection.commit()
+
+        # update success and show new updated listings
+        print("\nListing successfully updated!\n")
+        print("\n-- %s's Listings --" % current_user)
+        user_listings(current_user)
+
+    except pymysql.Error as e:
+        # catch any errors produced by mysql
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+def update_listing_page(current_user):
+    print("\n-- Update Listing --")
+
+    # check whether user has any listings before asking to choose listing to update
+    num_listings = get_user_listings(current_user)
+
+    if (len(num_listings) == 0):
+        # user doesn't have any listings - cannot update
+        print("\nSorry, you currently don't have any listings to update")
+    else:
+        # user has listings - prompt user to choose one to update
+        valid_listing = False
+        while (not valid_listing):
+            print("\nWhich listing would you like to update?")
+
+            # Retrieve and display user's listings
+            listings = user_listings(current_user)
+
+            selection = int(input("\nChoose listing # from the above options: "))
+            selection -= 1
+
+            # validate selection
+            if (selection >= len(listings) or selection < 0):
+                # invalid selection
+                print("Invalid listing number. Please choose a valid listing number from the options")
+            else:
+                # valid selection - update chosen listing
+                new_price, new_quantity, new_description = update_listing_values()
+                update_listing(current_user, listings[selection], new_price, new_quantity, new_description)
+                valid_listing = True
+
 
 
 # Menu options for listings page
@@ -691,16 +859,20 @@ def choose_listings_menu_option(current_user):
         selection = input("Choose an option #: ")
 
         if (selection == "1"):
-            # TODO: create listing
-            print("CREATE LISTING")
+            # navigate to create listing page
+            create_listing_page(current_user)
 
         elif (selection == "2"):
-            # TODO: update listing
-            print("UPDATE LISTING")
+            # navigate to update listing page
+            update_listing_page(current_user)
 
         elif (selection == "3"):
             # TODO: delete listing
             print("DELETE LISTING")
+
+            # show user's listings
+            print("\n-- %s's Listings --" % current_user)
+            user_listings(current_user)
 
         elif (selection == "4"):
             # exit listings page - return to home
@@ -725,7 +897,7 @@ def listings_page(current_user):
 def display_menu_options():
     print("\n-- Community Rentals Home --")
     print("What would you like to do?")
-    print("1. Profile\n2. Manage listings\n3. Log out")
+    print("1. Profile\n2. Manage listings\n3. Search for items\n4. Search for user\n5. Manage wishlist\n6. Log out")
 
 
 def home_menu(current_user):
@@ -745,6 +917,18 @@ def home_menu(current_user):
             listings_page(current_user)
 
         elif (selection == "3"):
+            # navigate to search for items page
+            print("SEARCH FOR ITEMS")
+
+        elif (selection == "4"):
+            # navigate to search for users page
+            print("SEARCH FOR USER")
+
+        elif (selection == "5"):
+            # navigate to manage wishlist page
+            print("MANAGE WISHLIST")
+
+        elif (selection == "6"):
             # navigate back to log in screen
             logout = True
 
