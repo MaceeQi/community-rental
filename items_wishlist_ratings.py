@@ -395,12 +395,10 @@ def switch(command, current):
 
 
 if __name__ == "__main__":
-    # sql_username = input("Enter your MySQL username: ")
-    # sql_username = sql_username.strip()
-    # sql_password = input("Enter your MySQL password: ")
-    # sql_password = sql_password.strip()
-    sql_username = 'root'
-    sql_password = ''
+    sql_username = input("Enter your MySQL username: ")
+    sql_username = sql_username.strip()
+    sql_password = input("Enter your MySQL password: ")
+    sql_password = sql_password.strip()
 
     connection = pymysql.connect(host='localhost',
                                  user=sql_username,
@@ -429,4 +427,3 @@ if __name__ == "__main__":
         ret = switch(command, current_user)
 
     connection.close()
-    
