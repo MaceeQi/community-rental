@@ -133,7 +133,7 @@ BEGIN
 	SELECT * FROM user HAVING username = name_p OR first_name = name_p OR last_name = name_p;
 END$$
 DELIMITER ;
-
+call search_user('amazon');
 
 -- Search for all users
 DROP PROCEDURE IF EXISTS all_users;
@@ -229,6 +229,16 @@ END$$
 DELIMITER ;
 
 
+-- Search for all item categories
+DROP PROCEDURE IF EXISTS all_categories;
+DELIMITER $$
+CREATE PROCEDURE all_categories()
+BEGIN
+	SELECT * FROM item_category;
+END$$
+DELIMITER ;
+
+
 -- Search for all items in a category
 DROP PROCEDURE IF EXISTS search_items_by_category;
 DELIMITER $$
@@ -244,6 +254,15 @@ DELIMITER $$
 CREATE PROCEDURE search_items_by_seller(seller_p VARCHAR(64))
 BEGIN
 	SELECT * FROM item WHERE owner = seller_p;
+END$$
+DELIMITER ;
+
+-- Search for specific item by ID
+DROP PROCEDURE IF EXISTS search_item_by_id;
+DELIMITER $$
+CREATE PROCEDURE search_item_by_id(id_p INT)
+BEGIN
+	SELECT * FROM item WHERE id = id_p;
 END$$
 DELIMITER ;
 
@@ -264,10 +283,10 @@ DROP PROCEDURE IF EXISTS get_user_listings;
 DELIMITER $$
 CREATE PROCEDURE get_user_listings( IN username_p VARCHAR(64) )
 	BEGIN
-		SELECT item, description, price, quantity, average_rating, 
+		SELECT item, owner, description, price, quantity, average_rating, 
 			rating_count, total_rating, category FROM listing
 			JOIN item ON listing.item = item.id
-			WHERE seller = username_p;
+			WHERE item.owner = username_p;
     END $$
 DELIMITER ;
 
@@ -688,6 +707,8 @@ BEGIN
 		SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = 'Given payment not associated with user';
     ELSEIF (DATE(rent_date) > DATE(return_date)) THEN
 		SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = 'Return date must be after rent date';
+	ELSEIF (renter_p = get_item_owner(item_p)) THEN
+		SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = 'User cannot rent their own item';
 	ELSE
 		INSERT INTO rental VALUES (item_p, renter_p, payment_p, rent_date, return_date);
         UPDATE listing SET quantity = quantity - 1 WHERE item = item_p;
@@ -697,7 +718,6 @@ BEGIN
     END IF;
 END$$
 DELIMITER ;
-
 
 
 
@@ -818,9 +838,11 @@ DELIMITER ;
 -- Rate item
 DROP PROCEDURE IF EXISTS rate_item;
 DELIMITER $$
-CREATE PROCEDURE rate_item(item_p INT, rating_p INT)
+CREATE PROCEDURE rate_item(rater_p VARCHAR(64), item_p INT, rating_p INT)
 BEGIN
-	IF (rating_p > 5 OR rating_p < 1) THEN
+	IF (rater_p = get_item_owner(item_p)) THEN
+		SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = 'User cannot rate their own item';
+	ELSEIF (rating_p > 5 OR rating_p < 1) THEN
 		SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = 'Ratings must be between 1 and 5';
 	ELSE
 		UPDATE item SET total_rating = total_rating + rating_p WHERE id = item_p;
@@ -834,14 +856,16 @@ DELIMITER ;
 -- Rate user
 DROP PROCEDURE IF EXISTS rate_user;
 DELIMITER $$
-CREATE PROCEDURE rate_user(customer_p VARCHAR(64), rating_p INT)
+CREATE PROCEDURE rate_user(rater_p VARCHAR(64), user_p VARCHAR(64), rating_p INT)
 BEGIN
-	IF (rating_p > 5 OR rating_p < 1) THEN
+	IF (user_p = rater_p) THEN
+		SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = 'User cannot rate themself';
+	ELSEIF (rating_p > 5 OR rating_p < 1) THEN
 		SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = 'Ratings must be between 1 and 5';
 	ELSE
-		UPDATE user SET total_rating = total_rating + rating_p WHERE username = customer_p;
-        UPDATE user SET rating_count = rating_count + 1 WHERE username = customer_p;
-        UPDATE user SET average_rating = total_rating / rating_count WHERE username = customer_p;
+		UPDATE user SET total_rating = total_rating + rating_p WHERE username = user_p;
+        UPDATE user SET rating_count = rating_count + 1 WHERE username = user_p;
+        UPDATE user SET average_rating = total_rating / rating_count WHERE username = user_p;
     END IF;
 END$$
 DELIMITER ;
