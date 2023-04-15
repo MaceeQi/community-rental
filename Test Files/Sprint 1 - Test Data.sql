@@ -37,12 +37,12 @@ INSERT INTO item_category VALUES
     ('cooking')
 ;
 
-INSERT INTO item (description, average_rating, category) VALUES
-	('2017 macbook pro, lightly used', 0, 'technology'),
-    ('brand new IKEA desk chair', 0, 'furniture'),
-    ('wok', 0, 'cooking'),
-    ('butter knife', 0, 'cooking'),
-    ('computer desk', 0, 'furniture')
+INSERT INTO item (description, owner, average_rating, category) VALUES
+	('2017 macbook pro, lightly used', 'elongated', 0, 'technology'),
+    ('brand new IKEA desk chair', 'elongated', 0, 'furniture'),
+    ('wok', 'elongated', 0, 'cooking'),
+    ('butter knife', 'elongated', 0, 'cooking'),
+    ('computer desk', 'elongated', 0, 'furniture')
 ;
 
 INSERT INTO wishlist VALUES
@@ -51,8 +51,8 @@ INSERT INTO wishlist VALUES
 ;
 
 INSERT INTO listing VALUES
-	(1, 'elongated', 9999, 1),
-    (3, 'elongated', 35.99, 2)
+	(1, 9999, 1),
+    (3, 35.99, 2)
 ;
 
 INSERT INTO rental VALUES
