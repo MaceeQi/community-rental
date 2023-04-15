@@ -1,8 +1,14 @@
-# cs5200project
-Community Rental Project for CS5200
+# Community Rental
+Final project for CS5200
 
-Steps to run application:
-python3 -m pip install PyMySQL
-pip install cryptography
-pip install bcrypt
-python3 main.py
+## Description
+
+## Getting Started
+### Steps to run application for the first time:
+- python3 -m pip install PyMySQL
+- pip install cryptography
+- pip install bcrypt
+- python3 main.py
+
+### Steps to run application after the first time:
+- python3 main.py
