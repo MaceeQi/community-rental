@@ -687,51 +687,6 @@ def user_listings(current_user):
     return results
 
 
-# create listing in database with new item
-def create_new_item_listing(current_user):
-    print()
-
-
-# menu options for create listing page
-def create_listing_menu_options():
-    print("What kind of listing would you like to create?")
-    print("1. Create listing for new item\n2. Create listing for existing item\n3. Exit")
-
-
-def choose_create_listing_menu_option(current_user):
-    # Prompt user to choose a create listings menu option until choose exit
-    exit_create_listings = False
-    while (not exit_create_listings):
-        create_listing_menu_options()
-        selection = input("Choose an option #: ")
-
-        if (selection == "1"):
-            # TODO: create listing for new item
-            print("CREATE LISTING FOR NEW ITEM")
-
-        elif (selection == "2"):
-            # TODO: create listing for existing item
-            print("CREATE LISTING FOR EXISTING ITEM")
-
-        elif (selection == "3"):
-            # exit create listings page - return to manage listings
-            exit_create_listings = True
-
-            # show user's listings
-            print("\n-- %s's Listings --" % current_user)
-            user_listings(current_user)
-
-        else:
-            # Invalid selection - prompt user to choose again
-            print("Invalid option. Please choose a number that corresponds to a menu option.")
-
-def create_listing_page(current_user):
-    print("\n-- Create Listing --")
-
-    # menu options - create listing on new or existing item
-    choose_create_listing_menu_option(current_user)
-
-
 # validate input for listing price and quantity, and item description before adding/updating database
 def validate_price_quantity_description(price, quantity, description):
     price_error = False
@@ -777,6 +732,81 @@ def validate_price_quantity_description(price, quantity, description):
     return False
 
 
+# create listing in database with new item
+def create_new_item_listing(current_user, description, category, price, quantity):
+    try:
+        # create listing and item in database
+        cursor.callproc("create_new_item_listing", [current_user, description, category, price, quantity, ])
+
+        # commit inserted data
+        connection.commit()
+
+        # update success and show new updated listings
+        print("\nListing successfully created!\n")
+        print("\n-- %s's Listings --" % current_user)
+        user_listings(current_user)
+        print()
+
+    except pymysql.Error as e:
+        # catch any errors produced by mysql
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+def create_new_item_listing_page(current_user):
+    # prompt user for item and listing attributes
+    input_error = True
+    while (input_error):
+        print("\n-- Create Listing For New Item --")
+        description = input("Item description: ")
+        category = input("Item category: ")
+        price = input("Item price: ")
+        quantity = input("Quantity of items: ")
+        input_error = validate_price_quantity_description(price, quantity, description)
+
+    # create new listing and new item in database
+    create_new_item_listing(current_user, description, category, price, quantity)
+
+
+# menu options for create listing page
+def create_listing_menu_options():
+    print("What kind of listing would you like to create?")
+    print("1. Create listing for new item\n2. Create listing for existing item\n3. Exit")
+
+
+def choose_create_listing_menu_option(current_user):
+    # Prompt user to choose a create listings menu option until choose exit
+    exit_create_listings = False
+    while (not exit_create_listings):
+        create_listing_menu_options()
+        selection = input("Choose an option #: ")
+
+        if (selection == "1"):
+            # navigate to create listing for new item
+            create_new_item_listing_page(current_user)
+
+        elif (selection == "2"):
+            # TODO: create listing for existing item
+            print("CREATE LISTING FOR EXISTING ITEM")
+
+        elif (selection == "3"):
+            # exit create listings page - return to manage listings
+            exit_create_listings = True
+
+            # show user's listings
+            print("\n-- %s's Listings --" % current_user)
+            user_listings(current_user)
+
+        else:
+            # Invalid selection - prompt user to choose again
+            print("Invalid option. Please choose a number that corresponds to a menu option.")
+
+def create_listing_page(current_user):
+    print("\n-- Create Listing --")
+
+    # menu options - create listing on new or existing item
+    choose_create_listing_menu_option(current_user)
+
+
 # prompt user for new price, quantity, and item description to update listing
 def update_listing_values():
     input_error = True
@@ -820,12 +850,12 @@ def update_listing_page(current_user):
 
     if (len(num_listings) == 0):
         # user doesn't have any listings - cannot update
-        print("\nSorry, you currently don't have any listings to update")
+        print("Sorry, you currently don't have any listings to update")
     else:
         # user has listings - prompt user to choose one to update
         valid_listing = False
         while (not valid_listing):
-            print("\nWhich listing would you like to update?")
+            print("Which listing would you like to update?")
 
             # Retrieve and display user's listings
             listings = user_listings(current_user)
@@ -836,7 +866,7 @@ def update_listing_page(current_user):
             # validate selection
             if (selection >= len(listings) or selection < 0):
                 # invalid selection
-                print("Invalid listing number. Please choose a valid listing number from the options")
+                print("Invalid listing number. Please choose a valid listing number from the options\n")
             else:
                 # valid selection - update chosen listing
                 new_price, new_quantity, new_description = update_listing_values()
@@ -853,7 +883,7 @@ def delete_listing(current_user, listing):
         # delete listing from database
         cursor.callproc("delete_listing", [item, current_user, ])
 
-        # commit updated data
+        # commit deleted data
         connection.commit()
 
         # update success and show current listings
@@ -874,12 +904,12 @@ def delete_listing_page(current_user):
 
     if (len(num_listings) == 0):
         # user doesn't have any listings - cannot delete any
-        print("\nSorry, you currently don't have any listings to delete")
+        print("Sorry, you currently don't have any listings to delete")
     else:
         # user has listings - prompt user to choose one to delete
         valid_listing = False
         while (not valid_listing):
-            print("\nWhich listing would you like to delete?")
+            print("Which listing would you like to delete?")
 
             # Retrieve and display user's listings
             listings = user_listings(current_user)
@@ -890,7 +920,7 @@ def delete_listing_page(current_user):
             # validate selection
             if (selection >= len(listings) or selection < 0):
                 # invalid selection
-                print("Invalid listing number. Please choose a valid listing number from the options")
+                print("Invalid listing number. Please choose a valid listing number from the options\n")
             else:
                 # valid selection - delete chosen listing
                 delete_listing(current_user, listings[selection])
