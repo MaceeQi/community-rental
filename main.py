@@ -32,6 +32,7 @@ def connect_to_database(database):
         print('\nError: %d: %s' % (e.args[0], e.args[1]))
         print('\nPlease enter a valid MySQL username and password to access the database.')
 
+
 # hash password with salt
 def hash_password(password):
     # convert password string to byte
@@ -44,6 +45,7 @@ def hash_password(password):
     hashed_password = bcrypt.hashpw(password, salt)
 
     return hashed_password
+
 
 def check_password(input_password, stored_password):
     # check whether hashed passwords match
@@ -68,6 +70,7 @@ def prompt_try_again():
 
     return next_steps
 
+
 # login function
 def login():
     print("\nLog In")
@@ -79,9 +82,6 @@ def login():
         password = input("Password: ")
 
         try:
-            # instantiate cursor for connection
-            cursor = connection.cursor()
-
             # check if username exists
             cursor.callproc("search_user", [username, ])
             if (len(cursor.fetchall()) != 1):
@@ -200,9 +200,6 @@ def signup():
         else:
             # Create new user in user table if no errors in input
             try:
-                # instantiate cursor for connection
-                cursor = connection.cursor()
-
                 # hash and salt password before storing
                 password = hash_password(password)
 
@@ -268,9 +265,6 @@ def prompt_login_signup():
 # Retrieve user's basic info from database
 def get_user_info(current_user):
     try:
-        # instantiate cursor for connection
-        cursor = connection.cursor()
-
         # call get_user_info procedure to retrieve user's basic info based on username
         cursor.callproc("get_user_info", [current_user, ])
         result = cursor.fetchone()
@@ -285,9 +279,6 @@ def get_user_info(current_user):
 # Retrieve user's payment info from database
 def get_user_payment_info(current_user):
     try:
-        # instantiate cursor for connection
-        cursor = connection.cursor()
-
         # get user's stored payment info
         cursor.callproc("get_user_payment_info", [current_user, ])
         result = cursor.fetchall()
@@ -302,9 +293,6 @@ def get_user_payment_info(current_user):
 # Retrieve user's payment preferences from database
 def get_user_payment_preference(current_user):
     try:
-        # instantiate cursor for connection
-        cursor = connection.cursor()
-
         # get user's stored payment preferences
         cursor.callproc("get_user_payment_preference", [current_user, ])
         result = cursor.fetchall()
@@ -373,9 +361,6 @@ def update_user_name(current_user):
     new_last_name = input("Last name: ")
 
     try:
-        # instantiate cursor for connection
-        cursor = connection.cursor()
-
         # update user's first name in database
         cursor.callproc("update_user_first_name", [current_user, new_first_name, ])
 
@@ -405,9 +390,6 @@ def update_phone(current_user):
         input_error = validate_phone_input(new_phone)
 
     try:
-        # instantiate cursor for connection
-        cursor = connection.cursor()
-
         # update user's phone number in database
         cursor.callproc("update_user_phone", [current_user, new_phone, ])
 
@@ -437,9 +419,6 @@ def update_address(current_user):
         input_error = validate_address_input(new_street_num, new_state, new_zipcode)
 
     try:
-        # instantiate cursor for connection
-        cursor = connection.cursor()
-
         # update user's address in database
         cursor.callproc("update_user_address", [current_user, new_street_num, new_street_name, new_city, new_state,
                                                 new_zipcode, ])
@@ -498,9 +477,6 @@ def create_payment_info(current_user):
         input_error = validate_cc_info(cc_number, expiration_date, cc_type)
 
     try:
-        # instantiate cursor for connection
-        cursor = connection.cursor()
-
         # add new payment info to database and associate with user
         cursor.callproc("user_adds_payment_info", [current_user, cc_number, expiration_date, cc_type, ])
 
@@ -522,9 +498,6 @@ def delete_payment_info(current_user):
     cc_number = input("Enter the credit card # you would like to delete: ")
 
     try:
-        # instantiate cursor for connection
-        cursor = connection.cursor()
-
         # delete user association with payment info from database
         cursor.callproc("user_deletes_payment_info", [current_user, cc_number, ])
 
@@ -545,9 +518,6 @@ def create_payment_preference(current_user):
     print("\n-- Add Payment Preference --")
 
     try:
-        # instantiate cursor for connection
-        cursor = connection.cursor()
-
         # check to make sure user is seller
         seller_query = "SELECT (user_is_seller(%s)) AS seller;"
         cursor.execute(seller_query, current_user)
@@ -591,9 +561,6 @@ def delete_payment_preference(current_user):
     cc_type = input("Enter the credit card type you no longer prefer: ")
 
     try:
-        # instantiate cursor for connection
-        cursor = connection.cursor()
-
         # delete user association with payment preference from database
         cursor.callproc("user_deletes_payment_preference", [current_user, cc_type, ])
 
@@ -673,9 +640,6 @@ def profile(current_user):
 # Retrieve user's listings from database
 def get_user_listings(current_user):
     try:
-        # instantiate cursor for connection
-        cursor = connection.cursor()
-
         # call procedure to retrieve user's listings
         cursor.callproc("get_user_listings", [current_user, ])
         result = cursor.fetchall()
@@ -791,7 +755,6 @@ def home_menu(current_user):
     return
 
 
-
 def start_community_rentals_app():
     # welcome message
     print("\nWelcome to the Community Rentals App!")
@@ -816,6 +779,9 @@ if __name__ == '__main__':
     print("\nPlease enter your MySQL username and password to access the database.")
     while (connection == None):
         connection = connect_to_database(database)
+
+    # instantiate cursor for connection
+    cursor = connection.cursor()
 
     # begin Community Rentals App
     print("\nDirecting you to the Community Rentals Application...")
