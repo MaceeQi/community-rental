@@ -3,6 +3,7 @@ import datetime
 import pymysql
 import bcrypt
 import tabulate
+import decimal
 
 # Prompt user for MySQL username and password
 def prompt_user():
@@ -1133,8 +1134,13 @@ def all_items():
         rows = []
         for item in items:
             rows.append([item.get(k) for k in desired_keys])
+        for row in rows:
+            for i in range(len(row)):
+                if row[i] == decimal.Decimal('0.0'):
+                    row[i] = "None"
         print("\n-- All items --")
         print_table(rows, desired_keys)
+        print(rows)
         return items
 
     except pymysql.Error as e:
@@ -1150,6 +1156,10 @@ def all_item_categories():
         rows = []
         for category in categories:
             rows.append([category.get(k) for k in desired_keys])
+        for row in rows:
+            for i in range(len(row)):
+                if row[i] == decimal.Decimal('0.0'):
+                    row[i] = "None"
         print("\n-- All Categories --")
         print_table(rows, desired_keys)
         return categories
@@ -1172,6 +1182,10 @@ def search_items_by_category():
         rows = []
         for item in items:
             rows.append([item.get(k) for k in desired_keys])
+        for row in rows:
+            for i in range(len(row)):
+                if row[i] == decimal.Decimal('0.0'):
+                    row[i] = "None"
         print("\n-- Items found matching the '" + category + "' category --")
         print_table(rows, desired_keys)
         return items
@@ -1190,6 +1204,10 @@ def all_users():
         rows = []
         for user in users:
             rows.append([user.get(k) for k in desired_keys])
+        for row in rows:
+            for i in range(len(row)):
+                if row[i] == decimal.Decimal('0.0'):
+                    row[i] = "None"
         print("\n-- All Users --")
         print_table(rows, desired_keys)
         return users
@@ -1203,7 +1221,7 @@ def search_items_by_owner():
     all_users()
     owner = ""
     while owner == "":
-        owner = input("Whose items would you like to search for?\n")
+        owner = input("Whose items would you like to search for? (username)\n")
     try:
         cursor.callproc('search_items_by_seller', [owner])
         items = cursor.fetchall()
@@ -1211,6 +1229,10 @@ def search_items_by_owner():
         rows = []
         for item in items:
             rows.append([item.get(k) for k in desired_keys])
+        for row in rows:
+            for i in range(len(row)):
+                if row[i] == decimal.Decimal('0.0'):
+                    row[i] = "None"
         print("\n-- Items owned by '" + owner + "' --")
         print_table(rows, desired_keys)
         return items
@@ -1231,6 +1253,10 @@ def search_item_by_id():
         rows = []
         for item in items:
             rows.append([item.get(k) for k in desired_keys])
+        for row in rows:
+            for i in range(len(row)):
+                if row[i] == decimal.Decimal('0.0'):
+                    row[i] = "None"
         print("\n-- Searching for item with ID '" + item_id + "' --")
         print_table(rows, desired_keys)
         return items
@@ -1248,6 +1274,10 @@ def search_item(item_id):
         rows = []
         for item in items:
             rows.append([item.get(k) for k in desired_keys])
+        for row in rows:
+            for i in range(len(row)):
+                if row[i] == decimal.Decimal('0.0'):
+                    row[i] = "None"
         print("\n")
         print_table(rows, desired_keys)
         return items
@@ -1266,6 +1296,10 @@ def all_listings():
         rows = []
         for listing in listings:
             rows.append([listing.get(k) for k in desired_keys])
+        for row in rows:
+            for i in range(len(row)):
+                if row[i] == decimal.Decimal('0.0'):
+                    row[i] = "None"
         print("\n-- All Listings --")
         print_table(rows, desired_keys)
         return listings
@@ -1284,6 +1318,10 @@ def all_rentals():
         rows = []
         for rental in rentals:
             rows.append([rental.get(k) for k in desired_keys])
+        for row in rows:
+            for i in range(len(row)):
+                if row[i] == decimal.Decimal('0.0'):
+                    row[i] = "None"
         print("\n-- All Rentals --")
         print_table(rows, desired_keys)
         return rentals
@@ -1297,8 +1335,8 @@ def rate_item(current):
     try:
         print("\n-- Rating an item --")
         all_items()
-        item = input("Which item would you like to rate?    ")
-        rating = input("What would you rate this item from 1-5?    ")
+        item = input("Which item would you like to rate? (item ID)\n")
+        rating = input("What would you rate this item from 1-5?\n")
         cursor.callproc('rate_item', [current, item, rating])
         print("\nItem " + item + " given a rating of " + rating + "\n")
         search_item(item)
@@ -1316,6 +1354,10 @@ def get_user_payment(user):
         rows = []
         for payment in payments:
             rows.append([payment.get(k) for k in desired_keys])
+        for row in rows:
+            for i in range(len(row)):
+                if row[i] == decimal.Decimal('0.0'):
+                    row[i] = "None"
         print("\n-- Your current payment info --")
         print_table(rows, desired_keys)
 
@@ -1351,6 +1393,10 @@ def get_rentals(current):
         rows = []
         for rental in rentals:
             rows.append([rental.get(k) for k in desired_keys])
+        for row in rows:
+            for i in range(len(row)):
+                if row[i] == decimal.Decimal('0.0'):
+                    row[i] = "None"
         print("\n-- Items currently rented by user '" + current + "' --")
         print_table(rows, desired_keys)
         return rentals
@@ -1363,10 +1409,10 @@ def rent_item(current):
     try:
         print("\n-- Renting an item --")
         all_listings()
-        item = input("Which item would you like to rent?    ")
+        item = input("Which item would you like to rent? (item ID)\n")
         payment = choose_payment(current)
-        rental_date = input("When are you renting this item? (YYYY-MM-DD):    ")
-        return_date = input("When are you returning this item? (YYYY-MM-DD):   ")
+        rental_date = input("When are you renting this item? (YYYY-MM-DD):\n")
+        return_date = input("When are you returning this item? (YYYY-MM-DD):\n")
         cursor.callproc('rent_item', [item, current, payment, rental_date, return_date])
         print("\nItem rental successful!\n")
         get_rentals(current)
@@ -1418,6 +1464,10 @@ def all_sellers():
         rows = []
         for seller in sellers:
             rows.append([seller.get(k) for k in desired_keys])
+        for row in rows:
+            for i in range(len(row)):
+                if row[i] == decimal.Decimal('0.0'):
+                    row[i] = "None"
         print("\n-- All Sellers --")
         print_table(rows, desired_keys)
         return sellers
@@ -1430,7 +1480,7 @@ def all_sellers():
 def search_user():
     name = ""
     while name == "":
-        name = input("Who would you like to search for?     ")
+        name = input("Who would you like to search for?\n")
     try:
         cursor.callproc('search_user', [name])
         users = cursor.fetchall()
@@ -1439,6 +1489,10 @@ def search_user():
         rows = []
         for user in users:
             rows.append([user.get(k) for k in desired_keys])
+        for row in rows:
+            for i in range(len(row)):
+                if row[i] == decimal.Decimal('0.0'):
+                    row[i] = "None"
         print("\n-- Users found matching the name '" + name + "' --")
         print_table(rows, desired_keys)
         return users
@@ -1457,6 +1511,10 @@ def search_specific_user(name):
         rows = []
         for user in users:
             rows.append([user.get(k) for k in desired_keys])
+        for row in rows:
+            for i in range(len(row)):
+                if row[i] == decimal.Decimal('0.0'):
+                    row[i] = "None"
         print("\n")
         print_table(rows, desired_keys)
         return users
@@ -1470,8 +1528,8 @@ def rate_user(current):
     try:
         print("\n-- Rating a user --")
         all_users()
-        username = input("Which user (username) would you like to rate?    ")
-        rating = input("What would you rate this user from 1-5?    ")
+        username = input("Which user (username) would you like to rate?\n")
+        rating = input("What would you rate this user from 1-5?\n")
         cursor.callproc('rate_user', [current, username, rating])
         print("\n User '" + username + "' given a rating of " + rating + "\n")
         search_specific_user(username)
@@ -1483,7 +1541,7 @@ def rate_user(current):
 
 def user_search_page(current):
     while True:
-        print("\n-- User Search ")
+        print("\n-- User Search --")
         print("What would you like to do?")
         print("1. List all users\n"
               "2. List all sellers\n"
@@ -1515,6 +1573,10 @@ def all_customers():
         rows = []
         for customer in customers:
             rows.append([customer.get(k) for k in desired_keys])
+        for row in rows:
+            for i in range(len(row)):
+                if row[i] == decimal.Decimal('0.0'):
+                    row[i] = "None"
         print("\n-- All Customers --")
         print_table(rows, desired_keys)
         return customers
@@ -1532,6 +1594,10 @@ def get_wishlist(current):
         rows = []
         for item in wishlist:
             rows.append([item.get(k) for k in desired_keys])
+        for row in rows:
+            for i in range(len(row)):
+                if row[i] == decimal.Decimal('0.0'):
+                    row[i] = "None"
         print("\n-- All items on your wishlist --")
         print_table(rows, desired_keys)
         return wishlist
@@ -1546,7 +1612,7 @@ def add_wishlist(customer):
         print("\n-- Adding an item to your wishlist --")
         get_wishlist(customer)
         all_items()
-        item = input("Which item would you like to add to your wishlist?    ")
+        item = input("Which item would you like to add to your wishlist? (item ID)\n")
         cursor.callproc('wish_for_item', [customer, item])
         get_wishlist(customer)
         return
@@ -1560,7 +1626,7 @@ def delete_wishlist(customer):
     try:
         print("\n-- Deleting an item from your wishlist --")
         get_wishlist(customer)
-        item = input("Which item would you like to delete from your wishlist?    ")
+        item = input("Which item would you like to delete from your wishlist? (item ID)\n")
         cursor.callproc('delete_wishlist_item', [customer, item])
         get_wishlist(customer)
         return
@@ -1574,7 +1640,7 @@ def search_wishlist():
     customer = ""
     while customer == "":
         all_customers()
-        customer = input("Whose wishlist would you like to search for?     ")
+        customer = input("Whose wishlist would you like to search for? (username)\n")
     try:
         cursor.callproc('list_wishlist', [customer])
         wishlist = cursor.fetchall()
@@ -1582,6 +1648,10 @@ def search_wishlist():
         rows = []
         for item in wishlist:
             rows.append([item.get(k) for k in desired_keys])
+        for row in rows:
+            for i in range(len(row)):
+                if row[i] == decimal.Decimal('0.0'):
+                    row[i] = "None"
         print("\n-- All items on '" + customer + "''s wishlist --")
         print_table(rows, desired_keys)
         return wishlist
@@ -1592,7 +1662,7 @@ def search_wishlist():
 
 def wishlist_page(current):
     while True:
-        print("\n-- Manage Wishlist ")
+        print("\n-- Manage Wishlist --")
         print("What would you like to do?")
         print("1. View your own wishlist\n"
               "2. Add an item to your wishlist\n"
