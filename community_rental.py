@@ -1383,11 +1383,10 @@ def item_search_page(current):
               "2. List all item categories\n"
               "3. Search for items by category\n"
               "4. Search for items by owner\n"
-              "5. Search for items by item ID\n"
-              "6. Rate item\n"
-              "7. Rent item\n"
-              "8. List all items currently rented out\n"
-              "9. Exit item search")
+              "5. Rate item\n"
+              "6. Rent item\n"
+              "7. List all items currently rented out\n"
+              "8. Exit item search")
         option = input("Choose an option #: ")
         if option == "1":
             all_items()
@@ -1398,14 +1397,12 @@ def item_search_page(current):
         elif option == "4":
             search_items_by_owner()
         elif option == "5":
-            search_item_by_id()
-        elif option == "6":
             rate_item(current)
-        elif option == "7":
+        elif option == "6":
             rent_item(current)
-        elif option == "8":
+        elif option == "7":
             all_rentals()
-        elif option == "9":
+        elif option == "8":
             break
         else:
             print("Invalid option. Please choose a number that corresponds to a menu option.")
