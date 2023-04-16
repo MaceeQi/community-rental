@@ -1140,7 +1140,6 @@ def all_items():
                     row[i] = "None"
         print("\n-- All items --")
         print_table(rows, desired_keys)
-        print(rows)
         return items
 
     except pymysql.Error as e:
@@ -1173,7 +1172,7 @@ def search_items_by_category():
     all_item_categories()
     category = ""
     while category == "":
-        category = input("What item category would you like to search for?\n")
+        category = input("\nWhat item category would you like to search for?\n")
 
     try:
         cursor.callproc('search_items_by_category', [category])
@@ -1221,7 +1220,7 @@ def search_items_by_owner():
     all_users()
     owner = ""
     while owner == "":
-        owner = input("Whose items would you like to search for? (username)\n")
+        owner = input("\nWhose items would you like to search for? (username)\n")
     try:
         cursor.callproc('search_items_by_seller', [owner])
         items = cursor.fetchall()
@@ -1335,7 +1334,7 @@ def rate_item(current):
     try:
         print("\n-- Rating an item --")
         all_items()
-        item = input("Which item would you like to rate? (item ID)\n")
+        item = input("\nWhich item would you like to rate? (item ID)\n")
         rating = input("What would you rate this item from 1-5?\n")
         cursor.callproc('rate_item', [current, item, rating])
         print("\nItem " + item + " given a rating of " + rating + "\n")
@@ -1409,7 +1408,7 @@ def rent_item(current):
     try:
         print("\n-- Renting an item --")
         all_listings()
-        item = input("Which item would you like to rent? (item ID)\n")
+        item = input("\nWhich item would you like to rent? (item ID)\n")
         payment = choose_payment(current)
         rental_date = input("When are you renting this item? (YYYY-MM-DD):\n")
         return_date = input("When are you returning this item? (YYYY-MM-DD):\n")
@@ -1528,7 +1527,7 @@ def rate_user(current):
     try:
         print("\n-- Rating a user --")
         all_users()
-        username = input("Which user (username) would you like to rate?\n")
+        username = input("\nWhich user (username) would you like to rate?\n")
         rating = input("What would you rate this user from 1-5?\n")
         cursor.callproc('rate_user', [current, username, rating])
         print("\n User '" + username + "' given a rating of " + rating + "\n")
@@ -1612,7 +1611,7 @@ def add_wishlist(customer):
         print("\n-- Adding an item to your wishlist --")
         get_wishlist(customer)
         all_items()
-        item = input("Which item would you like to add to your wishlist? (item ID)\n")
+        item = input("\nWhich item would you like to add to your wishlist? (item ID)\n")
         cursor.callproc('wish_for_item', [customer, item])
         get_wishlist(customer)
         return
@@ -1626,7 +1625,7 @@ def delete_wishlist(customer):
     try:
         print("\n-- Deleting an item from your wishlist --")
         get_wishlist(customer)
-        item = input("Which item would you like to delete from your wishlist? (item ID)\n")
+        item = input("\nWhich item would you like to delete from your wishlist? (item ID)\n")
         cursor.callproc('delete_wishlist_item', [customer, item])
         get_wishlist(customer)
         return
