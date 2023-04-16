@@ -314,6 +314,16 @@ END$$
 DELIMITER ;
 
 
+-- Search for specific user's rentals
+DROP PROCEDURE IF EXISTS get_rentals;
+DELIMITER $$
+CREATE PROCEDURE get_rentals(username_p VARCHAR(64))
+BEGIN
+	SELECT * FROM item JOIN rental ON item.id = rental.item WHERE customer = username_p;
+END$$
+DELIMITER ;
+
+
 -- Get all items in a specified customer's wishlist
 DROP PROCEDURE IF EXISTS list_wishlist;
 DELIMITER $$

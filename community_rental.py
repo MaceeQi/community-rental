@@ -2,6 +2,7 @@ import datetime
 
 import pymysql
 import bcrypt
+import tabulate
 
 # Prompt user for MySQL username and password
 def prompt_user():
@@ -486,6 +487,7 @@ def create_payment_info(current_user):
         # update success and show new updated values
         print("\nPayment info successfully added!\n")
         user_info(current_user)
+        return cc_number
 
     except pymysql.Error as e:
         # catch any errors produced by mysql
@@ -1117,6 +1119,504 @@ def listings_page(current_user):
     choose_listings_menu_option(current_user)
 
 
+# print table (tabulate):
+def print_table(rows, keys):
+    print(tabulate.tabulate(rows, keys, tablefmt='grid'))
+
+
+# list all items
+def all_items():
+    try:
+        cursor.callproc('all_items')
+        items = cursor.fetchall()
+        desired_keys = ['id', 'owner', 'description', 'category', 'average_rating']
+        rows = []
+        for item in items:
+            rows.append([item.get(k) for k in desired_keys])
+        print("\n-- All items --")
+        print_table(rows, desired_keys)
+        return items
+
+    except pymysql.Error as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+# list all item categories
+def all_item_categories():
+    try:
+        cursor.callproc('all_categories')
+        categories = cursor.fetchall()
+        desired_keys = ['category']
+        rows = []
+        for category in categories:
+            rows.append([category.get(k) for k in desired_keys])
+        print("\n-- All Categories --")
+        print_table(rows, desired_keys)
+        return categories
+
+    except pymysql.Error as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+# search for item by category
+def search_items_by_category():
+    all_item_categories()
+    category = ""
+    while category == "":
+        category = input("What item category would you like to search for?\n")
+
+    try:
+        cursor.callproc('search_items_by_category', [category])
+        items = cursor.fetchall()
+        desired_keys = ['id', 'owner', 'description', 'category', 'average_rating']
+        rows = []
+        for item in items:
+            rows.append([item.get(k) for k in desired_keys])
+        print("\n-- Items found matching the '" + category + "' category --")
+        print_table(rows, desired_keys)
+        return items
+
+    except pymysql.Error as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+# list all users
+def all_users():
+    try:
+        cursor.callproc('all_users')
+        users = cursor.fetchall()
+        desired_keys = ['username', 'first_name', 'last_name', 'phone', 'average_rating',
+                        'street_number', 'street_name', 'city', 'state', 'zipcode']
+        rows = []
+        for user in users:
+            rows.append([user.get(k) for k in desired_keys])
+        print("\n-- All Users --")
+        print_table(rows, desired_keys)
+        return users
+
+    except pymysql.Error as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+# search for item by owner
+def search_items_by_owner():
+    all_users()
+    owner = ""
+    while owner == "":
+        owner = input("Whose items would you like to search for?\n")
+    try:
+        cursor.callproc('search_items_by_seller', [owner])
+        items = cursor.fetchall()
+        desired_keys = ['id', 'owner', 'description', 'category', 'average_rating']
+        rows = []
+        for item in items:
+            rows.append([item.get(k) for k in desired_keys])
+        print("\n-- Items owned by '" + owner + "' --")
+        print_table(rows, desired_keys)
+        return items
+
+    except pymysql.Error as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+# search for item by id
+def search_item_by_id():
+    item_id = 0
+    while item_id <= 0:
+        item_id = input("What item ID would you like to search for?\n")
+    try:
+        cursor.callproc('search_item_by_id', [item_id])
+        items = cursor.fetchall()
+        desired_keys = ['id', 'owner', 'description', 'category', 'average_rating']
+        rows = []
+        for item in items:
+            rows.append([item.get(k) for k in desired_keys])
+        print("\n-- Searching for item with ID '" + item_id + "' --")
+        print_table(rows, desired_keys)
+        return items
+
+    except pymysql.Error as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+# search for item by id
+def search_item(item_id):
+    try:
+        cursor.callproc('search_item_by_id', [item_id])
+        items = cursor.fetchall()
+        desired_keys = ['id', 'owner', 'description', 'category', 'average_rating']
+        rows = []
+        for item in items:
+            rows.append([item.get(k) for k in desired_keys])
+        print("\n")
+        print_table(rows, desired_keys)
+        return items
+
+    except pymysql.Error as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+# list all listings
+def all_listings():
+    try:
+        cursor.callproc('all_listings')
+        listings = cursor.fetchall()
+        desired_keys = ['item', 'owner', 'description', 'category', 'average_rating',
+                        'price', 'quantity']
+        rows = []
+        for listing in listings:
+            rows.append([listing.get(k) for k in desired_keys])
+        print("\n-- All Listings --")
+        print_table(rows, desired_keys)
+        return listings
+
+    except pymysql.Error as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+# list all rentals
+def all_rentals():
+    try:
+        cursor.callproc('all_rentals')
+        rentals = cursor.fetchall()
+        desired_keys = ['item', 'owner', 'customer', 'description', 'category',
+                        'average_rating', 'rental_date', 'return_date']
+        rows = []
+        for rental in rentals:
+            rows.append([rental.get(k) for k in desired_keys])
+        print("\n-- All Rentals --")
+        print_table(rows, desired_keys)
+        return rentals
+
+    except pymysql.Error as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+# rate item
+def rate_item(current):
+    try:
+        print("\n-- Rating an item --")
+        all_items()
+        item = input("Which item would you like to rate?    ")
+        rating = input("What would you rate this item from 1-5?    ")
+        cursor.callproc('rate_item', [current, item, rating])
+        print("\nItem " + item + " given a rating of " + rating + "\n")
+        search_item(item)
+
+    except pymysql.Error as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+# get user's payment info
+def get_user_payment(user):
+    try:
+        cursor.callproc('get_user_payment_info', [user])
+        payments = cursor.fetchall()
+        desired_keys = ['cc_number', 'expiration_date']
+        rows = []
+        for payment in payments:
+            rows.append([payment.get(k) for k in desired_keys])
+        print("\n-- Your current payment info --")
+        print_table(rows, desired_keys)
+
+    except pymysql.Error as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+def choose_payment(current):
+    get_user_payment(current)
+    while True:
+        print("Do you want to use an existing payment or create a new one?\n"
+              "1. Select from an existing payment\n"
+              "2. Create a new payment method")
+        answer = input("Select an option #: ")
+        if answer == "1":
+            payment = input("Select a credit card number to use: ")
+            break
+        elif answer == "2":
+            payment = create_payment_info(current)
+            break
+        else:
+            print("Please select a valid option.")
+    return payment
+
+
+# get specified user's rentals
+def get_rentals(current):
+    try:
+        cursor.callproc('get_rentals', [current])
+        rentals = cursor.fetchall()
+        desired_keys = ['item', 'owner', 'customer', 'description', 'category',
+                        'average_rating', 'rental_date', 'return_date']
+        rows = []
+        for rental in rentals:
+            rows.append([rental.get(k) for k in desired_keys])
+        print("\n-- Items currently rented by user '" + current + "' --")
+        print_table(rows, desired_keys)
+        return rentals
+    except pymysql.Error as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+# rent an item
+def rent_item(current):
+    try:
+        print("\n-- Renting an item --")
+        all_listings()
+        item = input("Which item would you like to rent?    ")
+        payment = choose_payment(current)
+        rental_date = input("When are you renting this item? (YYYY-MM-DD):    ")
+        return_date = input("When are you returning this item? (YYYY-MM-DD):   ")
+        cursor.callproc('rent_item', [item, current, payment, rental_date, return_date])
+        print("\nItem rental successful!\n")
+        get_rentals(current)
+
+    except pymysql.Error as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+def item_search_page(current):
+    while True:
+        print("\n-- Item Search --")
+        print("What would you like to do?")
+        print("1. List all items\n"
+              "2. List all item categories\n"
+              "3. Search for items by category\n"
+              "4. Search for items by owner\n"
+              "5. Search for items by item ID\n"
+              "6. Rate item\n"
+              "7. Rent item\n"
+              "8. List all items currently rented out\n"
+              "9. Exit item search")
+        option = input("Choose an option #: ")
+        if option == "1":
+            all_items()
+        elif option == "2":
+            all_item_categories()
+        elif option == "3":
+            search_items_by_category()
+        elif option == "4":
+            search_items_by_owner()
+        elif option == "5":
+            search_item_by_id()
+        elif option == "6":
+            rate_item(current)
+        elif option == "7":
+            rent_item(current)
+        elif option == "8":
+            all_rentals()
+        elif option == "9":
+            break
+        else:
+            print("Invalid option. Please choose a number that corresponds to a menu option.")
+
+
+# list all sellers
+def all_sellers():
+    try:
+        cursor.callproc('all_sellers')
+        sellers = cursor.fetchall()
+        desired_keys = ['username', 'first_name', 'last_name', 'phone', 'average_rating',
+                        'street_number', 'street_name', 'city', 'state', 'zipcode']
+        rows = []
+        for seller in sellers:
+            rows.append([seller.get(k) for k in desired_keys])
+        print("\n-- All Sellers --")
+        print_table(rows, desired_keys)
+        return sellers
+
+    except pymysql.Error as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+# search for user by username/firstname/lastname
+def search_user():
+    name = ""
+    while name == "":
+        name = input("Who would you like to search for?     ")
+    try:
+        cursor.callproc('search_user', [name])
+        users = cursor.fetchall()
+        desired_keys = ['username', 'first_name', 'last_name', 'phone', 'average_rating',
+                        'street_number', 'street_name', 'city', 'state', 'zipcode']
+        rows = []
+        for user in users:
+            rows.append([user.get(k) for k in desired_keys])
+        print("\n-- Users found matching the name '" + name + "' --")
+        print_table(rows, desired_keys)
+        return users
+
+    except pymysql.Error as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+# search specific user
+def search_specific_user(name):
+    try:
+        cursor.callproc('search_user', [name])
+        users = cursor.fetchall()
+        desired_keys = ['username', 'first_name', 'last_name', 'phone', 'average_rating',
+                        'street_number', 'street_name', 'city', 'state', 'zipcode']
+        rows = []
+        for user in users:
+            rows.append([user.get(k) for k in desired_keys])
+        print("\n")
+        print_table(rows, desired_keys)
+        return users
+
+    except pymysql.Error as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+# rate user
+def rate_user(current):
+    try:
+        print("\n-- Rating a user --")
+        all_users()
+        username = input("Which user (username) would you like to rate?    ")
+        rating = input("What would you rate this user from 1-5?    ")
+        cursor.callproc('rate_user', [current, username, rating])
+        print("\n User '" + username + "' given a rating of " + rating + "\n")
+        search_specific_user(username)
+        return
+
+    except pymysql.Error as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+def user_search_page(current):
+    while True:
+        print("\n-- User Search ")
+        print("What would you like to do?")
+        print("1. List all users\n"
+              "2. List all sellers\n"
+              "3. Search for user by name\n"
+              "4. Rate user\n"
+              "5. Exit item search")
+        option = input("Choose an option #: ")
+        if option == "1":
+            all_users()
+        elif option == "2":
+            all_sellers()
+        elif option == "3":
+            search_user()
+        elif option == "4":
+            rate_user(current)
+        elif option == "5":
+            break
+        else:
+            print("Invalid option. Please choose a number that corresponds to a menu option.")
+
+
+# list all customers
+def all_customers():
+    try:
+        cursor.callproc('all_customers')
+        customers = cursor.fetchall()
+        desired_keys = ['username', 'first_name', 'last_name', 'phone', 'average_rating',
+                        'street_number', 'street_name', 'city', 'state', 'zipcode']
+        rows = []
+        for customer in customers:
+            rows.append([customer.get(k) for k in desired_keys])
+        print("\n-- All Customers --")
+        print_table(rows, desired_keys)
+        return customers
+
+    except pymysql.Error as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+# get user wishlist
+def get_wishlist(current):
+    try:
+        cursor.callproc('list_wishlist', [current])
+        wishlist = cursor.fetchall()
+        desired_keys = ['item', 'description', 'category']
+        rows = []
+        for item in wishlist:
+            rows.append([item.get(k) for k in desired_keys])
+        print("\n-- All items on your wishlist --")
+        print_table(rows, desired_keys)
+        return wishlist
+
+    except pymysql.Error as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+# add item to wishlist
+def add_wishlist(customer):
+    try:
+        print("\n-- Adding an item to your wishlist --")
+        get_wishlist(customer)
+        all_items()
+        item = input("Which item would you like to add to your wishlist?    ")
+        cursor.callproc('wish_for_item', [customer, item])
+        get_wishlist(customer)
+        return
+
+    except pymysql.Error as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+# delete item from wishlist
+def delete_wishlist(customer):
+    try:
+        print("\n-- Deleting an item from your wishlist --")
+        get_wishlist(customer)
+        item = input("Which item would you like to delete from your wishlist?    ")
+        cursor.callproc('delete_wishlist_item', [customer, item])
+        get_wishlist(customer)
+        return
+
+    except pymysql.Error as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+# look up a wishlist
+def search_wishlist():
+    customer = ""
+    while customer == "":
+        all_customers()
+        customer = input("Whose wishlist would you like to search for?     ")
+    try:
+        cursor.callproc('list_wishlist', [customer])
+        wishlist = cursor.fetchall()
+        desired_keys = ['item', 'description', 'category']
+        rows = []
+        for item in wishlist:
+            rows.append([item.get(k) for k in desired_keys])
+        print("\n-- All items on '" + customer + "''s wishlist --")
+        print_table(rows, desired_keys)
+        return wishlist
+
+    except pymysql.Error as e:
+        print('Error: %d: %s' % (e.args[0], e.args[1]))
+
+
+def wishlist_page(current):
+    while True:
+        print("\n-- Manage Wishlist ")
+        print("What would you like to do?")
+        print("1. View your own wishlist\n"
+              "2. Add an item to your wishlist\n"
+              "3. Delete an item from your wishlist\n"
+              "4. View another user's wishlist\n"
+              "5. Exit item search")
+        option = input("Choose an option #: ")
+        if option == "1":
+            get_wishlist(current)
+        elif option == "2":
+            add_wishlist(current)
+        elif option == "3":
+            delete_wishlist(current)
+        elif option == "4":
+            search_wishlist()
+        elif option == "5":
+            break
+        else:
+            print("Invalid option. Please choose a number that corresponds to a menu option.")
+
+
 # Menu options for home page after log in
 def display_menu_options():
     print("\n-- Community Rentals Home --")
@@ -1142,15 +1642,15 @@ def home_menu(current_user):
 
         elif (selection == "3"):
             # navigate to search for items page
-            print("SEARCH FOR ITEMS")
+            item_search_page(current_user)
 
         elif (selection == "4"):
             # navigate to search for users page
-            print("SEARCH FOR USER")
+            user_search_page(current_user)
 
         elif (selection == "5"):
             # navigate to manage wishlist page
-            print("MANAGE WISHLIST")
+            wishlist_page(current_user)
 
         elif (selection == "6"):
             # navigate back to log in screen
@@ -1159,7 +1659,6 @@ def home_menu(current_user):
         else:
             # Invalid selection - prompt user to choose again
             print("Invalid option. Please choose a number that corresponds to a menu option.")
-
     return
 
 

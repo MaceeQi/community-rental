@@ -51,8 +51,8 @@ INSERT INTO wishlist VALUES
 ;
 
 INSERT INTO listing VALUES
-	(1, 9999, 1),
-    (3, 35.99, 2)
+	(5, 9999, 1),
+    (6, 35.99, 2)
 ;
 
 INSERT INTO rental VALUES
