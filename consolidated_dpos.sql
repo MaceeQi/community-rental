@@ -1,5 +1,6 @@
 USE community_rentals;
 
+
 -- Database programming objects for community rental project
 
 -- *******************************************************************************************
@@ -133,6 +134,18 @@ BEGIN
 	SELECT * FROM user HAVING username = name_p OR first_name = name_p OR last_name = name_p;
 END$$
 DELIMITER ;
+call search_user('amazon');
+
+-- retrieve user info
+-- get all attributes of user based on username
+DROP PROCEDURE IF EXISTS get_user_info;
+DELIMITER $$
+CREATE PROCEDURE get_user_info( IN username_p VARCHAR(64) )
+	BEGIN
+		SELECT * FROM user
+            WHERE user.username = username_p;
+    END $$
+DELIMITER ;
 
 
 -- Search for all users
@@ -229,6 +242,16 @@ END$$
 DELIMITER ;
 
 
+-- Search for all item categories
+DROP PROCEDURE IF EXISTS all_categories;
+DELIMITER $$
+CREATE PROCEDURE all_categories()
+BEGIN
+	SELECT * FROM item_category;
+END$$
+DELIMITER ;
+
+
 -- Search for all items in a category
 DROP PROCEDURE IF EXISTS search_items_by_category;
 DELIMITER $$
@@ -244,6 +267,15 @@ DELIMITER $$
 CREATE PROCEDURE search_items_by_seller(seller_p VARCHAR(64))
 BEGIN
 	SELECT * FROM item WHERE owner = seller_p;
+END$$
+DELIMITER ;
+
+-- Search for specific item by ID
+DROP PROCEDURE IF EXISTS search_item_by_id;
+DELIMITER $$
+CREATE PROCEDURE search_item_by_id(id_p INT)
+BEGIN
+	SELECT * FROM item WHERE id = id_p;
 END$$
 DELIMITER ;
 
@@ -264,10 +296,10 @@ DROP PROCEDURE IF EXISTS get_user_listings;
 DELIMITER $$
 CREATE PROCEDURE get_user_listings( IN username_p VARCHAR(64) )
 	BEGIN
-		SELECT item, description, price, quantity, average_rating, 
+		SELECT item, owner, description, price, quantity, average_rating, 
 			rating_count, total_rating, category FROM listing
 			JOIN item ON listing.item = item.id
-			WHERE seller = username_p;
+            WHERE owner = username_p;
     END $$
 DELIMITER ;
 
@@ -278,6 +310,16 @@ DELIMITER $$
 CREATE PROCEDURE all_rentals()
 BEGIN
 	SELECT * FROM item JOIN rental ON item.id = rental.item;
+END$$
+DELIMITER ;
+
+
+-- Search for specific user's rentals
+DROP PROCEDURE IF EXISTS get_rentals;
+DELIMITER $$
+CREATE PROCEDURE get_rentals(username_p VARCHAR(64))
+BEGIN
+	SELECT * FROM item JOIN rental ON item.id = rental.item WHERE customer = username_p;
 END$$
 DELIMITER ;
 
@@ -388,10 +430,14 @@ CREATE FUNCTION seller_listing_count(seller_p VARCHAR(64))
 RETURNS INT DETERMINISTIC READS SQL DATA
 BEGIN
 	DECLARE listing_count INT DEFAULT 0;
-    SELECT COUNT(*) INTO listing_count FROM listing WHERE seller = seller_p;
+    SELECT COUNT(*) INTO listing_count 
+		FROM listing 
+        JOIN item ON listing.item = item.id
+        WHERE owner = seller_p;
 	RETURN (listing_count);
 END$$
 DELIMITER ;
+
 
 -- Returns the owner of the specified item
 DROP FUNCTION IF EXISTS get_item_owner;
@@ -405,6 +451,22 @@ BEGIN
 END$$
 DELIMITER ;
 
+
+-- Returns matching username's password
+DROP FUNCTION IF EXISTS get_user_password;
+DELIMITER $$
+CREATE FUNCTION get_user_password( username_p VARCHAR(64) )
+	RETURNS VARCHAR(128)
+    DETERMINISTIC
+    READS SQL DATA
+    BEGIN
+		DECLARE user_password VARCHAR(128) DEFAULT NULL;
+        SELECT password INTO user_password
+			FROM user
+            WHERE username = username_p;
+		RETURN (user_password);
+	END $$
+DELIMITER ;
 
 
 
@@ -523,6 +585,24 @@ CREATE PROCEDURE user_deletes_payment_info( IN username_p VARCHAR(64),
 DELIMITER ;
 
 
+-- user deletes payment preference
+-- delete user's association to payment type preference
+DROP PROCEDURE IF EXISTS user_deletes_payment_preference;
+DELIMITER $$
+CREATE PROCEDURE user_deletes_payment_preference( IN username_p VARCHAR(64),
+	IN type_p ENUM('VISA','AMERICAN EXPRESS','MASTERCARD') )
+    BEGIN
+		-- delete user and payment type association from payment_preference table
+        IF EXISTS (SELECT * FROM payment_preference WHERE
+			seller = username_p AND type = type_p)
+            THEN
+				DELETE FROM payment_preference WHERE
+                seller = username_p AND type = type_p;
+		END IF;
+    END $$
+DELIMITER ;
+
+
 -- create new listing
 -- use item that already exists in item table
 DROP PROCEDURE IF EXISTS create_listing;
@@ -567,8 +647,8 @@ CREATE PROCEDURE create_new_item_listing( IN username_p VARCHAR(64),
 		END IF;
             
 		-- create new item
-		INSERT INTO item (description, average_rating, category)
-			VALUES (item_description_p, "0", category_p);
+		INSERT INTO item (owner, description, average_rating, category)
+			VALUES (username_p, item_description_p, "0", category_p);
 			
 		-- store new item's PK into new_item variable
 		SELECT LAST_INSERT_ID() INTO new_item;
@@ -688,6 +768,8 @@ BEGIN
 		SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = 'Given payment not associated with user';
     ELSEIF (DATE(rent_date) > DATE(return_date)) THEN
 		SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = 'Return date must be after rent date';
+	ELSEIF (renter_p = get_item_owner(item_p)) THEN
+		SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = 'User cannot rent their own item';
 	ELSE
 		INSERT INTO rental VALUES (item_p, renter_p, payment_p, rent_date, return_date);
         UPDATE listing SET quantity = quantity - 1 WHERE item = item_p;
@@ -697,7 +779,6 @@ BEGIN
     END IF;
 END$$
 DELIMITER ;
-
 
 
 
@@ -803,7 +884,7 @@ CREATE PROCEDURE update_listing( IN item_p INT, IN username_p VARCHAR(64),
             -- update price and quantity in listing to new values
             UPDATE listing SET price = new_price_p, 
 				quantity = new_quantity_p WHERE
-                item = item_p AND seller = username_p;
+                item = item_p;
             
             -- update item description for item associated to listing
 			UPDATE item SET description = new_item_description_p
@@ -818,9 +899,11 @@ DELIMITER ;
 -- Rate item
 DROP PROCEDURE IF EXISTS rate_item;
 DELIMITER $$
-CREATE PROCEDURE rate_item(item_p INT, rating_p INT)
+CREATE PROCEDURE rate_item(rater_p VARCHAR(64), item_p INT, rating_p INT)
 BEGIN
-	IF (rating_p > 5 OR rating_p < 1) THEN
+	IF (rater_p = get_item_owner(item_p)) THEN
+		SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = 'User cannot rate their own item';
+	ELSEIF (rating_p > 5 OR rating_p < 1) THEN
 		SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = 'Ratings must be between 1 and 5';
 	ELSE
 		UPDATE item SET total_rating = total_rating + rating_p WHERE id = item_p;
@@ -834,14 +917,16 @@ DELIMITER ;
 -- Rate user
 DROP PROCEDURE IF EXISTS rate_user;
 DELIMITER $$
-CREATE PROCEDURE rate_user(customer_p VARCHAR(64), rating_p INT)
+CREATE PROCEDURE rate_user(rater_p VARCHAR(64), user_p VARCHAR(64), rating_p INT)
 BEGIN
-	IF (rating_p > 5 OR rating_p < 1) THEN
+	IF (user_p = rater_p) THEN
+		SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = 'User cannot rate themself';
+	ELSEIF (rating_p > 5 OR rating_p < 1) THEN
 		SIGNAL SQLSTATE '42000' SET MESSAGE_TEXT = 'Ratings must be between 1 and 5';
 	ELSE
-		UPDATE user SET total_rating = total_rating + rating_p WHERE username = customer_p;
-        UPDATE user SET rating_count = rating_count + 1 WHERE username = customer_p;
-        UPDATE user SET average_rating = total_rating / rating_count WHERE username = customer_p;
+		UPDATE user SET total_rating = total_rating + rating_p WHERE username = user_p;
+        UPDATE user SET rating_count = rating_count + 1 WHERE username = user_p;
+        UPDATE user SET average_rating = total_rating / rating_count WHERE username = user_p;
     END IF;
 END$$
 DELIMITER ;
