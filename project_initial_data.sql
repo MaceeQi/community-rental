@@ -41,7 +41,7 @@ INSERT INTO payment_info VALUES
 --     100, "Huntington Ave", "Boston", "MA", "02116"),
 --     ('elongated', 'muskrat', 'Elon', 'Musk', '123456789', 0, TRUE, TRUE, 
 --     38, 'Westland Ave.', 'Boston', 'MA', '02115'),
---     ('amazon', 'webservices', 'Jose', 'Annunziato', '0000000', 0, TRUE, FALSE, 
+--     ('amazon', 'webservices', 'Jeff', 'Bezos', '0000000', 0, TRUE, FALSE, 
 --     1, 'North College St.', 'Northfield', 'MN', '55057');
     
     
