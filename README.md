@@ -1,5 +1,5 @@
-# Community Rental Database
-Final project for CS5200
+# Community Rental
+Developed as a final project for CS5200 - Database Management Systems
 By Chanon Bovornvirakit and Macee Qi
 
 ## Description
@@ -7,6 +7,7 @@ For our final project, we created a community rental application. The data store
 
 ## Getting Started
 ### Steps to run application for the first time:
+- Run project_data_dump.sql
 - python3 -m pip install PyMySQL
 - pip install cryptography
 - pip install bcrypt
@@ -15,3 +16,10 @@ For our final project, we created a community rental application. The data store
 
 ### Steps to run application after the first time:
 - python3 community_rental.py
+
+## Technical Specifications
+We used SQL and MySQL Workbench to create and manage the relational database. The user application was created with Python 3.9 and connected to the database via PyMySQL. We used 'bcrypt' and 'cryptography' Python packages to encrypt user passwords, and 'tabulate' Python package to improve the command-line table presentation.
+
+- Bcrypt: https://pypi.org/project/bcrypt/ 
+- Cryptography: https://pypi.org/project/cryptography/
+- Tabulate: https://pypi.org/project/tabulate/
